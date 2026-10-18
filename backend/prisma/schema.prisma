@@ -1,0 +1,87 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  STUDENT
+  LANDLORD
+  ADMIN
+}
+
+enum RoomCategory {
+  SHARED_ROOM
+  PRIVATE_ROOM
+  ENTIRE_PLACE
+}
+
+model User {
+  id           String     @id @default(uuid())
+  name         String
+  email        String     @unique
+  passwordHash String
+  phone        String?
+  role         Role       @default(STUDENT)
+  properties   Property[] @relation("LandlordProperties")
+  bookings     Booking[]
+  createdAt    DateTime   @default(now())
+}
+
+model University {
+  id        String   @id @default(uuid())
+  name      String
+  city      String
+  country   String
+  latitude  Float
+  longitude Float
+  logoUrl   String?
+  createdAt DateTime @default(now())
+}
+
+model Property {
+  id          String     @id @default(uuid())
+  title       String
+  description String
+  address     String
+  city        String
+  latitude    Float
+  longitude   Float
+  amenities   String[]
+  images      String[]
+  landlordId  String
+  landlord    User       @relation("LandlordProperties", fields: [landlordId], references: [id])
+  rooms       RoomType[]
+  createdAt   DateTime   @default(now())
+}
+
+model RoomType {
+  id            String       @id @default(uuid())
+  name          String
+  category      RoomCategory
+  pricePerMonth Float
+  currency      String       @default("USD")
+  sizeSqm       Float?
+  availableFrom DateTime
+  isAvailable   Boolean      @default(true)
+  propertyId    String
+  property      Property     @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  bookings      Booking[]
+}
+
+model Booking {
+  id             String   @id @default(uuid())
+  studentId      String
+  student        User     @relation(fields: [studentId], references: [id])
+  roomTypeId     String
+  roomType       RoomType @relation(fields: [roomTypeId], references: [id])
+  moveInDate     DateTime
+  durationMonths Int
+  message        String?
+  status         String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  createdAt      DateTime @default(now())
+}

@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import 'leaflet/dist/leaflet.css';
+
+.price-pin {
+  background: #ffffff;
+  color: #1e293b;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  border: 2px solid #cbd5e1;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.price-pin-active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+  border-color: #1e40af !important;
+  transform: scale(1.15);
+  z-index: 999 !important;
+}
+.uni-pin {
+  background: #dc2626;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  border: 2px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+  white-space: nowrap;
+}
