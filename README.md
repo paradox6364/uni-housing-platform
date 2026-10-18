@@ -1,6 +1,6 @@
 # 🎓 UniHousing Platform (Full-Stack Monorepo)
 
-A Student.com style cross-platform marketplace connecting university students with verified housing near their campus.
+cross-platform marketplace connecting university students with verified housing near their campus.
 
 ## 🧱 Architecture (6 Modules)
 1. **`/backend` (Modules 1 & 2):** Node.js, Express, Prisma v6 ORM, JWT Auth, Haversine Geolocation Engine, & Booking API.
