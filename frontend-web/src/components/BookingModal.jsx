@@ -5,16 +5,16 @@ import Link from 'next/link';
 import { submitBookingRequest } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-export default function BookingModal({ property, isOpen, onClose }) {
+export default function BookingModal({ property, isOpen = true, onClose }) {
   const { user, isLandlord } = useAuth();
 
-  const [selectedRoomId, setSelectedRoomId] = useState(
-    property?.roomTypes?.[0]?.id || ''
-  );
+  const rooms = property?.rooms || property?.roomTypes || [];
+
+  const [selectedRoomId, setSelectedRoomId] = useState(rooms[0]?.id || '');
   const [studentName, setStudentName] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
   const [moveInDate, setMoveInDate] = useState('2026-09-01');
-  const [leaseDurationMonths, setLeaseDurationMonths] = useState(9);
+  const [durationMonths, setDurationMonths] = useState(9);
   const [statusMsg, setStatusMsg] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -26,8 +26,9 @@ export default function BookingModal({ property, isOpen, onClose }) {
   }, [user]);
 
   useEffect(() => {
-    if (property?.roomTypes?.length > 0) {
-      setSelectedRoomId(property.roomTypes[0].id);
+    const availableRooms = property?.rooms || property?.roomTypes || [];
+    if (availableRooms.length > 0) {
+      setSelectedRoomId(availableRooms[0].id);
     }
   }, [property]);
 
@@ -45,11 +46,17 @@ export default function BookingModal({ property, isOpen, onClose }) {
         studentEmail,
         roomTypeId: selectedRoomId,
         moveInDate,
-        leaseDurationMonths: Number(leaseDurationMonths),
+        durationMonths: Number(durationMonths),
       });
-      setStatusMsg({ type: 'success', text: 'Booking request submitted! Track it in My Bookings.' });
+      setStatusMsg({
+        type: 'success',
+        text: 'Booking request submitted! Track it in My Bookings.',
+      });
     } catch (error) {
-      setStatusMsg({ type: 'error', text: error.message || 'Failed to submit booking.' });
+      setStatusMsg({
+        type: 'error',
+        text: error.message || 'Failed to submit booking.',
+      });
     } finally {
       setSubmitting(false);
     }
@@ -59,8 +66,13 @@ export default function BookingModal({ property, isOpen, onClose }) {
     <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-bold text-slate-900">Book {property.title}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl">
+          <h3 className="text-lg font-bold text-slate-900">
+            Book {property.title}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 text-2xl leading-none"
+          >
             &times;
           </button>
         </div>
@@ -91,7 +103,7 @@ export default function BookingModal({ property, isOpen, onClose }) {
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 required
               >
-                {property.roomTypes?.map((rt) => (
+                {rooms.map((rt) => (
                   <option key={rt.id} value={rt.id}>
                     {rt.name} — ${rt.pricePerMonth}/mo
                   </option>
@@ -141,15 +153,15 @@ export default function BookingModal({ property, isOpen, onClose }) {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                  Lease (Months)
+                  Duration (Months)
                 </label>
                 <input
                   type="number"
                   min={1}
                   max={24}
                   required
-                  value={leaseDurationMonths}
-                  onChange={(e) => setLeaseDurationMonths(e.target.value)}
+                  value={durationMonths}
+                  onChange={(e) => setDurationMonths(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
@@ -177,7 +189,7 @@ export default function BookingModal({ property, isOpen, onClose }) {
               </button>
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={submitting || rooms.length === 0}
                 className="px-5 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
               >
                 {submitting ? 'Sending...' : 'Request Booking'}
