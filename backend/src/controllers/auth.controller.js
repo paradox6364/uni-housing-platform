@@ -75,7 +75,6 @@ exports.login = async (req, res) => {
       return res.status(401).json({ error: 'Invalid email or password.' });
     }
 
-    // Support both bcrypt-hashed passwords and seeded demo passwords
     let isMatch = false;
     if (user.passwordHash.startsWith('$2')) {
       isMatch = await bcrypt.compare(password, user.passwordHash);
@@ -125,18 +124,10 @@ exports.getMe = async (req, res) => {
           orderBy: { createdAt: 'desc' }
         },
         properties: {
-          include: { roomTypes: true }
+          include: { rooms: true }
         }
       }
     });
 
     if (!user) {
       return res.status(404).json({ error: 'User not found.' });
-    }
-
-    return res.json({ user });
-  } catch (error) {
-    console.error('GetMe Error:', error);
-    return res.status(500).json({ error: 'Failed to fetch user profile.' });
-  }
-};
