@@ -319,7 +319,7 @@ export default function LandlordPortal() {
                       </p>
                       <p className="text-xs text-slate-400 mt-1">
                         Move-in: {new Date(b.moveInDate).toLocaleDateString()} •{' '}
-                        {b.leaseDurationMonths} months • ${b.roomType?.pricePerMonth}/mo
+                        {b.durationMonths} months • ${b.roomType?.pricePerMonth}/mo
                       </p>
                     </div>
 
