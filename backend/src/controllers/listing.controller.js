@@ -3,80 +3,133 @@ const { calculateDistanceKm, estimateCommute } = require('../utils/geo');
 
 exports.searchByUniversity = async (req, res) => {
   try {
-    const { universityId, maxDistanceKm = 15, maxPrice, category } = req.query;
-    if (!universityId) return res.status(400).json({ error: 'Please provide a universityId' });
+    const {
+      universityId,
+      maxDistanceKm = 15,
+      maxPrice,
+      category,
+    } = req.query;
 
-    const university = await prisma.university.findUnique({ where: { id: universityId } });
-    if (!university) return res.status(404).json({ error: 'University not found' });
+    if (!universityId) {
+      return res.status(400).json({ error: 'universityId query parameter is required' });
+    }
+
+    const university = await prisma.university.findUnique({
+      where: { id: universityId },
+    });
+
+    if (!university) {
+      return res.status(404).json({ error: 'University not found' });
+    }
+
+    const roomFilter = { isAvailable: true };
+    if (maxPrice) roomFilter.pricePerMonth = { lte: parseFloat(maxPrice) };
+    if (category) roomFilter.category = category;
 
     const properties = await prisma.property.findMany({
       where: {
-        rooms: {
-          some: {
-            isAvailable: true,
-            ...(maxPrice && { pricePerMonth: { lte: parseFloat(maxPrice) } }),
-            ...(category && { category }),
-          },
-        },
+        city: university.city,
+        rooms: { some: roomFilter },
       },
       include: {
-        rooms: { where: { isAvailable: true }, orderBy: { pricePerMonth: 'asc' } },
-        landlord: { select: { id: true, name: true, phone: true } },
+        rooms: {
+          where: roomFilter,
+          orderBy: { pricePerMonth: 'asc' },
+        },
       },
     });
 
     const results = properties
-      .map((property) => {
-        const distanceKm = calculateDistanceKm(university.latitude, university.longitude, property.latitude, property.longitude);
+      .map((prop) => {
+        const distanceToUniKm = calculateDistanceKm(
+          university.latitude,
+          university.longitude,
+          prop.latitude,
+          prop.longitude
+        );
+
+        const commute = estimateCommute(distanceToUniKm);
+        const startingPrice =
+          prop.rooms.length > 0 ? prop.rooms[0].pricePerMonth : null;
+
         return {
-          ...property,
-          distanceToUniKm: distanceKm,
-          commute: estimateCommute(distanceKm),
-          startingPrice: property.rooms.length > 0 ? property.rooms[0].pricePerMonth : null,
+          ...prop,
+          distanceToUniKm,
+          commute,
+          startingPrice,
         };
       })
-      .filter((item) => item.distanceToUniKm <= parseFloat(maxDistanceKm))
+      .filter((prop) => prop.distanceToUniKm <= parseFloat(maxDistanceKm))
       .sort((a, b) => a.distanceToUniKm - b.distanceToUniKm);
 
-    res.json({ university, totalFound: results.length, listings: results });
+    return res.json({
+      university,
+      count: results.length,
+      listings: results,
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to search listings' });
+    console.error('SearchByUniversity Error:', error);
+    return res.status(500).json({ error: 'Failed to search listings' });
   }
 };
 
 exports.createProperty = async (req, res) => {
   try {
-    const { title, description, address, city, latitude, longitude, amenities, images, landlordId, rooms } = req.body;
-    let ownerId = landlordId;
+    const {
+      title,
+      description,
+      address,
+      city,
+      latitude,
+      longitude,
+      amenities = [],
+      images = [],
+      landlordId,
+      rooms = [],
+    } = req.body;
+
+    let ownerId = req.user?.id || landlordId;
+
     if (!ownerId) {
-      const firstLandlord = await prisma.user.findFirst({ where: { role: 'LANDLORD' } });
-      ownerId = firstLandlord?.id;
+      const defaultLandlord = await prisma.user.findFirst({
+        where: { role: 'LANDLORD' },
+      });
+      if (!defaultLandlord) {
+        return res.status(400).json({ error: 'No landlord account found.' });
+      }
+      ownerId = defaultLandlord.id;
     }
 
-    const newProperty = await prisma.property.create({
+    const property = await prisma.property.create({
       data: {
-        title, description, address, city,
+        title,
+        description,
+        address,
+        city,
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
-        amenities: amenities || [],
-        images: images || [],
+        amenities,
+        images,
         landlordId: ownerId,
         rooms: {
-          create: (rooms || []).map((r) => ({
+          create: rooms.map((r) => ({
             name: r.name,
             category: r.category || 'PRIVATE_ROOM',
             pricePerMonth: parseFloat(r.pricePerMonth),
             currency: r.currency || 'USD',
             sizeSqm: r.sizeSqm ? parseFloat(r.sizeSqm) : 18,
-            availableFrom: new Date(r.availableFrom || '2026-09-01'),
+            availableFrom: r.availableFrom
+              ? new Date(r.availableFrom)
+              : new Date(),
           })),
         },
       },
       include: { rooms: true },
     });
-    res.status(201).json(newProperty);
+
+    return res.status(201).json(property);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to create property listing' });
+    console.error('CreateProperty Error:', error);
+    return res.status(500).json({ error: 'Failed to create property.' });
   }
 };
