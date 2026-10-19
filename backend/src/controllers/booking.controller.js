@@ -2,17 +2,44 @@ const prisma = require('../config/db');
 
 exports.createBooking = async (req, res) => {
   try {
-    const { studentId, studentEmail, studentName, roomTypeId, moveInDate, durationMonths, message } = req.body;
+    const {
+      studentId,
+      studentName,
+      studentEmail,
+      roomTypeId,
+      moveInDate,
+      durationMonths,
+      leaseDurationMonths,
+    } = req.body;
 
-    let resolvedStudentId = studentId;
-    if (!resolvedStudentId && studentEmail) {
-      let student = await prisma.user.findUnique({ where: { email: studentEmail } });
+    const months = durationMonths || leaseDurationMonths;
+
+    if (!roomTypeId || !moveInDate || !months) {
+      return res.status(400).json({ error: 'Missing required booking fields.' });
+    }
+
+    if (req.user && req.user.role === 'LANDLORD') {
+      return res.status(403).json({ error: 'Landlord accounts cannot book rooms.' });
+    }
+
+    let resolvedStudentId = req.user?.id || studentId;
+
+    if (!resolvedStudentId) {
+      if (!studentEmail) {
+        return res.status(400).json({ error: 'Student email or account is required.' });
+      }
+
+      const normalizedEmail = studentEmail.toLowerCase().trim();
+      let student = await prisma.user.findUnique({
+        where: { email: normalizedEmail },
+      });
+
       if (!student) {
         student = await prisma.user.create({
           data: {
-            name: studentName || 'University Student',
-            email: studentEmail,
-            passwordHash: 'guest_booking',
+            name: studentName || 'Student Applicant',
+            email: normalizedEmail,
+            passwordHash: 'password123',
             role: 'STUDENT',
           },
         });
@@ -25,20 +52,23 @@ exports.createBooking = async (req, res) => {
         studentId: resolvedStudentId,
         roomTypeId,
         moveInDate: new Date(moveInDate),
-        durationMonths: parseInt(durationMonths, 10) || 9,
-        message: message || '',
+        durationMonths: parseInt(months, 10),
         status: 'PENDING',
       },
       include: {
-        roomType: { include: { property: true } },
-        student: { select: { id: true, name: true, email: true } },
+        student: {
+          select: { id: true, name: true, email: true, phone: true },
+        },
+        roomType: {
+          include: { property: true },
+        },
       },
     });
 
-    res.status(201).json(booking);
+    return res.status(201).json(booking);
   } catch (error) {
-    console.error('Booking error:', error);
-    res.status(500).json({ error: 'Failed to submit booking request' });
+    console.error('CreateBooking Error:', error);
+    return res.status(500).json({ error: 'Failed to create booking request.' });
   }
 };
 
