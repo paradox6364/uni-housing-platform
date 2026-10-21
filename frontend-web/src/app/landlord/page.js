@@ -84,8 +84,8 @@ export default function LandlordPortal() {
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
   // Initial Room Tier State
-  const [roomName, setRoomName] = useState('Classic En-Suite');
-  const [roomCategory, setRoomCategory] = useState('EN_SUITE');
+  const [roomName, setRoomName] = useState('Classic Private Room');
+  const [roomCategory, setRoomCategory] = useState('PRIVATE_ROOM');
   const [pricePerMonth, setPricePerMonth] = useState('950');
   const [sizeSqm, setSizeSqm] = useState('18');
 
@@ -698,7 +698,6 @@ export default function LandlordPortal() {
                       className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
                     >
                       <option value="PRIVATE_ROOM">Private Room</option>
-                      <option value="EN_SUITE">En-Suite</option>
                       <option value="ENTIRE_PLACE">Studio / Entire Place</option>
                       <option value="SHARED_ROOM">Shared Room</option>
                     </select>
