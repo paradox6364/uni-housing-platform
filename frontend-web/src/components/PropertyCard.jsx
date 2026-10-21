@@ -9,6 +9,7 @@ export default function PropertyCard({
   isHovered,
   onHover,
   onLeave,
+  onBook,
 }) {
   const coverImage =
     property.images?.[0] ||
@@ -18,8 +19,11 @@ export default function PropertyCard({
 
   return (
     <div
-      onMouseEnter={onHover}
-      onMouseLeave={onLeave}
+      onMouseEnter={() => onHover && onHover(property.id)}
+      onMouseLeave={() => {
+        if (onLeave) onLeave();
+        else if (onHover) onHover(null);
+      }}
       className={`bg-white rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col sm:flex-row ${
         isHovered
           ? 'border-blue-500 shadow-lg ring-2 ring-blue-500/20'
@@ -102,19 +106,30 @@ export default function PropertyCard({
           )}
         </div>
 
-        {/* Footer: Room Tiers Count & View Details CTA */}
+        {/* Footer Actions */}
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
           <div className="text-xs text-slate-500">
             <span className="font-semibold text-slate-700">{rooms.length}</span>{' '}
             {rooms.length === 1 ? 'room tier' : 'room tiers'} available
           </div>
 
-          <Link
-            href={`/properties/${property.id}`}
-            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition shadow-sm"
-          >
-            View Details & Rooms &rarr;
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/properties/${property.id}`}
+              className="border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg transition"
+            >
+              View Details
+            </Link>
+            {onBook && (
+              <button
+                type="button"
+                onClick={() => onBook(property)}
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow-sm"
+              >
+                Book Room
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
