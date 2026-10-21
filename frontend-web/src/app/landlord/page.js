@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import Navbar from '../../components/Navbar';
@@ -17,7 +17,7 @@ const LocationPickerMap = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="w-full h-72 rounded-xl bg-slate-100 animate-pulse flex items-center justify-center text-xs text-slate-400 border border-slate-200">
+      <div className="w-full h-80 rounded-xl bg-slate-100 animate-pulse flex items-center justify-center text-xs text-slate-400 border border-slate-200">
         Loading interactive map picker...
       </div>
     ),
@@ -67,6 +67,14 @@ export default function LandlordPortal() {
   const [city, setCity] = useState('London');
   const [latitude, setLatitude] = useState(30.04446);
   const [longitude, setLongitude] = useState(31.23565);
+  const [flyToTarget, setFlyToTarget] = useState(null);
+
+  // Street Search Autocomplete State
+  const [streetQuery, setStreetQuery] = useState('');
+  const [streetResults, setStreetResults] = useState([]);
+  const [searchingStreet, setSearchingStreet] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchContainerRef = useRef(null);
 
   // Property Images State
   const [images, setImages] = useState([
@@ -105,13 +113,100 @@ export default function LandlordPortal() {
     }
   }, [authLoading, user, isLandlord]);
 
+  // Close street search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Debounced Street Geocoding Search via OpenStreetMap Nominatim
+  useEffect(() => {
+    const trimmed = streetQuery.trim();
+    if (trimmed.length < 3) {
+      setStreetResults([]);
+      setSearchingStreet(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearchingStreet(true);
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&q=${encodeURIComponent(
+          trimmed
+        )}`;
+        const res = await fetch(url, {
+          headers: { 'Accept-Language': 'en' },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStreetResults(data || []);
+          setShowDropdown(true);
+        }
+      } catch (err) {
+        console.error('Street search failed:', err);
+      } finally {
+        setSearchingStreet(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [streetQuery]);
+
+  // Handle selecting a street option from the search dropdown
+  const handleSelectStreetResult = (place) => {
+    const lat = Number(parseFloat(place.lat).toFixed(6));
+    const lng = Number(parseFloat(place.lon).toFixed(6));
+
+    const addr = place.address || {};
+    const streetLine =
+      [
+        addr.house_number,
+        addr.road ||
+          addr.pedestrian ||
+          addr.footway ||
+          addr.suburb ||
+          addr.neighbourhood ||
+          place.name,
+      ]
+        .filter(Boolean)
+        .join(' ') || place.display_name.split(',')[0];
+
+    const detectedCity =
+      addr.city ||
+      addr.town ||
+      addr.municipality ||
+      addr.village ||
+      addr.county ||
+      addr.state ||
+      city;
+
+    setAddress(streetLine);
+    setCity(detectedCity);
+    setLatitude(lat);
+    setLongitude(lng);
+    setFlyToTarget({ lat, lng, zoom: 17, timestamp: Date.now() });
+    setStreetQuery(place.display_name);
+    setShowDropdown(false);
+  };
+
   // Jump map camera to a selected university campus
   const handleSelectCampusJump = (uniId) => {
     const uni = universities.find((u) => u.id === uniId);
     if (uni) {
+      const lat = Number((uni.latitude + 0.002).toFixed(6));
+      const lng = Number((uni.longitude + 0.002).toFixed(6));
       setCity(uni.city);
-      setLatitude(Number((uni.latitude + 0.002).toFixed(6)));
-      setLongitude(Number((uni.longitude + 0.002).toFixed(6)));
+      setLatitude(lat);
+      setLongitude(lng);
+      setFlyToTarget({ lat, lng, zoom: 15, timestamp: Date.now() });
     }
   };
 
@@ -204,6 +299,7 @@ export default function LandlordPortal() {
       setTitle('');
       setDescription('');
       setAddress('');
+      setStreetQuery('');
     } catch (err) {
       setCreatedMsg({
         type: 'error',
@@ -288,13 +384,13 @@ export default function LandlordPortal() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left 7 Columns: Publish New Property Studio (Map + Multi-Photo Uploader) */}
+          {/* Left 7 Columns: Publish New Property Studio */}
           <div className="lg:col-span-7 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
             <h2 className="text-lg font-bold text-slate-900 mb-1">
               Publish New Student Property
             </h2>
             <p className="text-xs text-slate-500 mb-6">
-              Pinpoint the building on the map, upload property photos, and configure your initial room tier.
+              Search for a street to jump the map, fine-tune the pin on the exact building, and upload property photos.
             </p>
 
             <form onSubmit={handleCreateProperty} className="space-y-6">
@@ -339,7 +435,7 @@ export default function LandlordPortal() {
                     required
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="42 Gower Street"
+                    placeholder="42 Gower Street (or use street search below)"
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
@@ -360,15 +456,15 @@ export default function LandlordPortal() {
 
               <hr className="border-slate-200" />
 
-              {/* Step 2: Interactive Map Location Picker */}
-              <div>
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+              {/* Step 2: Street Search Autocomplete + Interactive Map Location Picker */}
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 uppercase">
-                      Pinpoint Property Location
+                      Search Street & Pinpoint Property Location
                     </label>
                     <p className="text-[11px] text-slate-500">
-                      Click on the map or drag the marker to set the exact building coordinates.
+                      Search for a street to fly the map there, then click or drag the pin onto the exact building.
                     </p>
                   </div>
 
@@ -379,7 +475,7 @@ export default function LandlordPortal() {
                       className="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-slate-50 text-slate-700 font-medium"
                     >
                       <option value="" disabled>
-                        🎯 Jump map near university...
+                        🎯 Or jump near university...
                       </option>
                       {universities.map((u) => (
                         <option key={u.id} value={u.id}>
@@ -390,9 +486,86 @@ export default function LandlordPortal() {
                   )}
                 </div>
 
+                {/* Street Search Input & Autocomplete Dropdown */}
+                <div ref={searchContainerRef} className="relative">
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-slate-400 text-sm pointer-events-none">
+                      🔍
+                    </span>
+                    <input
+                      type="text"
+                      value={streetQuery}
+                      onFocus={() => {
+                        if (streetResults.length > 0) setShowDropdown(true);
+                      }}
+                      onChange={(e) => {
+                        setStreetQuery(e.target.value);
+                        setShowDropdown(true);
+                      }}
+                      placeholder="Search street, neighborhood, or landmark (e.g., Gower Street, London)..."
+                      className="w-full pl-9 pr-20 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50/60"
+                    />
+                    {searchingStreet && (
+                      <span className="absolute right-3 text-[11px] text-blue-600 font-semibold animate-pulse">
+                        Searching...
+                      </span>
+                    )}
+                    {!searchingStreet && streetQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStreetQuery('');
+                          setStreetResults([]);
+                          setShowDropdown(false);
+                        }}
+                        className="absolute right-3 text-xs text-slate-400 hover:text-slate-600 font-semibold"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Matching Street Options Dropdown */}
+                  {showDropdown && streetResults.length > 0 && (
+                    <ul className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto z-[1000] divide-y divide-slate-100">
+                      {streetResults.map((place) => (
+                        <li key={place.place_id}>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectStreetResult(place)}
+                            className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition flex items-start gap-2.5"
+                          >
+                            <span className="text-blue-600 mt-0.5 shrink-0">
+                              📍
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-slate-900 truncate">
+                                {place.display_name.split(',')[0]}
+                              </p>
+                              <p className="text-[11px] text-slate-500 line-clamp-1">
+                                {place.display_name}
+                              </p>
+                            </div>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {showDropdown &&
+                    !searchingStreet &&
+                    streetQuery.trim().length >= 3 &&
+                    streetResults.length === 0 && (
+                      <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg p-3 text-xs text-slate-500 text-center z-[1000]">
+                        No matching streets found. Try adding the city name (e.g., &ldquo;Tahrir Street, Cairo&rdquo;).
+                      </div>
+                    )}
+                </div>
+
                 <LocationPickerMap
                   latitude={latitude}
                   longitude={longitude}
+                  flyToTarget={flyToTarget}
                   onLocationChange={(lat, lng) => {
                     setLatitude(lat);
                     setLongitude(lng);
@@ -414,7 +587,9 @@ export default function LandlordPortal() {
                 <div className="flex flex-col sm:flex-row gap-2 mb-4">
                   {/* Upload from Device Button */}
                   <label className="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold transition shrink-0">
-                    <span>📷 {uploadingPhotos ? 'Processing...' : 'Upload Photos'}</span>
+                    <span>
+                      📷 {uploadingPhotos ? 'Processing...' : 'Upload Photos'}
+                    </span>
                     <input
                       type="file"
                       accept="image/*"
@@ -562,7 +737,9 @@ export default function LandlordPortal() {
                 disabled={submitting || uploadingPhotos}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 rounded-xl text-sm transition shadow-sm"
               >
-                {submitting ? 'Publishing Property...' : 'Publish Property Listing'}
+                {submitting
+                  ? 'Publishing Property...'
+                  : 'Publish Property Listing'}
               </button>
 
               {createdMsg.text && (
@@ -610,11 +787,13 @@ export default function LandlordPortal() {
                         <span className="text-blue-600">{b.roomType?.name}</span>
                       </h3>
                       <p className="text-xs text-slate-600 mt-0.5">
-                        Student: <strong>{b.student?.name}</strong> ({b.student?.email})
+                        Student: <strong>{b.student?.name}</strong> (
+                        {b.student?.email})
                       </p>
                       <p className="text-xs text-slate-400 mt-1">
                         Move-in: {new Date(b.moveInDate).toLocaleDateString()} •{' '}
-                        {b.durationMonths} months • ${b.roomType?.pricePerMonth}/mo
+                        {b.durationMonths} months • $
+                        {b.roomType?.pricePerMonth}/mo
                       </p>
                     </div>
 

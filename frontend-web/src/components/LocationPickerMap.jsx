@@ -19,21 +19,21 @@ const createPinIcon = () =>
     iconAnchor: [55, 16],
   });
 
-function MapCameraUpdater({ center }) {
+function MapCameraUpdater({ flyToTarget }) {
   const map = useMap();
   useEffect(() => {
     if (
-      center &&
-      typeof center[0] === 'number' &&
-      !Number.isNaN(center[0]) &&
-      typeof center[1] === 'number' &&
-      !Number.isNaN(center[1])
+      flyToTarget &&
+      typeof flyToTarget.lat === 'number' &&
+      !Number.isNaN(flyToTarget.lat) &&
+      typeof flyToTarget.lng === 'number' &&
+      !Number.isNaN(flyToTarget.lng)
     ) {
-      map.flyTo(center, map.getZoom() < 13 ? 14 : map.getZoom(), {
-        duration: 0.8,
+      map.flyTo([flyToTarget.lat, flyToTarget.lng], flyToTarget.zoom || 17, {
+        duration: 1.1,
       });
     }
-  }, [center, map]);
+  }, [flyToTarget, map]);
   return null;
 }
 
@@ -52,6 +52,7 @@ function MapClickHandler({ onPickLocation }) {
 export default function LocationPickerMap({
   latitude,
   longitude,
+  flyToTarget,
   onLocationChange,
 }) {
   const lat = parseFloat(latitude) || 30.04446;
@@ -60,7 +61,7 @@ export default function LocationPickerMap({
   const pinIcon = useMemo(() => createPinIcon(), []);
 
   return (
-    <div className="relative w-full h-72 rounded-xl overflow-hidden border border-slate-300 shadow-inner">
+    <div className="relative w-full h-80 rounded-xl overflow-hidden border border-slate-300 shadow-inner">
       <MapContainer
         center={position}
         zoom={14}
@@ -72,8 +73,8 @@ export default function LocationPickerMap({
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
 
-        <MapCameraUpdater center={position} />
-        <MapClickHandler onPickLocation={onLocationChange} />
+        <MapCameraUpdater flyToTarget={flyToTarget} />
+        <MapClickHandler onPickLocation={onPickLocationChange(onLocationChange)} />
 
         <Marker
           position={position}
@@ -92,11 +93,17 @@ export default function LocationPickerMap({
       </MapContainer>
 
       <div className="absolute bottom-2.5 left-2.5 right-2.5 z-[400] pointer-events-none flex items-center justify-between bg-slate-900/80 backdrop-blur-sm text-white text-[11px] px-3 py-1.5 rounded-lg">
-        <span>👆 Click anywhere on the map or drag the pin</span>
+        <span>👆 Click anywhere on the street or drag the pin</span>
         <span className="font-mono font-semibold text-blue-300">
           {lat.toFixed(5)}, {lng.toFixed(5)}
         </span>
       </div>
     </div>
   );
+}
+
+function onPickLocationChange(callback) {
+  return (lat, lng) => {
+    if (callback) callback(lat, lng);
+  };
 }
