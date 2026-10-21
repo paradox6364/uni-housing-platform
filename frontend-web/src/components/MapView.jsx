@@ -22,17 +22,17 @@ function MapUpdater({ center }) {
   return null;
 }
 
-const createUniIcon = () =>
+const createUniIcon = (uniName) =>
   L.divIcon({
-    className: 'custom-uni-marker',
-    html: `<div class="uni-pin">🎓 Campus</div>`,
-    iconSize: [90, 32],
-    iconAnchor: [45, 16],
+    className: '',
+    html: `<div class="uni-pin">🎓 ${uniName || 'University'}</div>`,
+    iconSize: [180, 36],
+    iconAnchor: [90, 18],
   });
 
 const createPriceIcon = (price, isHovered) =>
   L.divIcon({
-    className: 'custom-price-marker',
+    className: '',
     html: `<div class="price-pin ${
       isHovered ? 'price-pin-active' : ''
     }">$${price || 'N/A'}</div>`,
@@ -64,11 +64,12 @@ export default function MapView({
 
       <MapUpdater center={center} />
 
-      {/* University Campus Marker */}
+      {/* University Campus Marker with Full University Name */}
       {university && (
         <Marker
+          key={university.id || university.name}
           position={[university.latitude, university.longitude]}
-          icon={createUniIcon()}
+          icon={createUniIcon(university.name)}
         >
           <Popup>
             <div className="text-xs font-bold text-slate-900">
