@@ -5,16 +5,24 @@ import Link from 'next/link';
 import { submitBookingRequest } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
-export default function BookingModal({ property, isOpen = true, onClose }) {
+export default function BookingModal({
+  property,
+  isOpen = true,
+  initialRoomId = '',
+  initialDurationMonths = 9,
+  onClose,
+}) {
   const { user, isLandlord } = useAuth();
 
   const rooms = property?.rooms || property?.roomTypes || [];
 
-  const [selectedRoomId, setSelectedRoomId] = useState(rooms[0]?.id || '');
+  const [selectedRoomId, setSelectedRoomId] = useState(
+    initialRoomId || rooms[0]?.id || ''
+  );
   const [studentName, setStudentName] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
   const [moveInDate, setMoveInDate] = useState('2026-09-01');
-  const [durationMonths, setDurationMonths] = useState(9);
+  const [durationMonths, setDurationMonths] = useState(initialDurationMonths || 9);
   const [statusMsg, setStatusMsg] = useState(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -27,10 +35,18 @@ export default function BookingModal({ property, isOpen = true, onClose }) {
 
   useEffect(() => {
     const availableRooms = property?.rooms || property?.roomTypes || [];
-    if (availableRooms.length > 0) {
+    if (initialRoomId) {
+      setSelectedRoomId(initialRoomId);
+    } else if (availableRooms.length > 0) {
       setSelectedRoomId(availableRooms[0].id);
     }
-  }, [property]);
+  }, [property, initialRoomId]);
+
+  useEffect(() => {
+    if (initialDurationMonths) {
+      setDurationMonths(initialDurationMonths);
+    }
+  }, [initialDurationMonths]);
 
   if (!isOpen || !property) return null;
 
@@ -105,7 +121,7 @@ export default function BookingModal({ property, isOpen = true, onClose }) {
               >
                 {rooms.map((rt) => (
                   <option key={rt.id} value={rt.id}>
-                    {rt.name} — ${rt.pricePerMonth}/mo
+                    {rt.name} ({rt.category.replace('_', ' ')}) — ${rt.pricePerMonth}/mo
                   </option>
                 ))}
               </select>
@@ -192,7 +208,7 @@ export default function BookingModal({ property, isOpen = true, onClose }) {
                 disabled={submitting || rooms.length === 0}
                 className="px-5 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
               >
-                {submitting ? 'Sending...' : 'Request Booking'}
+                {submitting ? 'Sending...' : 'Confirm Booking Request'}
               </button>
             </div>
           </form>

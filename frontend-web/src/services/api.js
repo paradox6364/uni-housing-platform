@@ -59,6 +59,13 @@ export async function searchListings(params = {}) {
   return res.json();
 }
 
+export async function fetchPropertyById(propertyId) {
+  const res = await fetch(`${API_BASE_URL}/listings/${propertyId}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to fetch property details');
+  return data;
+}
+
 export async function createNewProperty(propertyData) {
   const res = await fetch(`${API_BASE_URL}/listings`, {
     method: 'POST',

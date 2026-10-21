@@ -73,6 +73,72 @@ exports.searchByUniversity = async (req, res) => {
   }
 };
 
+exports.getPropertyById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const property = await prisma.property.findUnique({
+      where: { id },
+      include: {
+        rooms: {
+          orderBy: { pricePerMonth: 'asc' },
+        },
+        landlord: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    // Find universities in the same city to compute commute & map markers
+    const universities = await prisma.university.findMany({
+      where: { city: property.city },
+    });
+
+    const nearbyUniversities = universities
+      .map((uni) => {
+        const distanceToUniKm = calculateDistanceKm(
+          uni.latitude,
+          uni.longitude,
+          property.latitude,
+          property.longitude
+        );
+        return {
+          ...uni,
+          distanceToUniKm,
+          commute: estimateCommute(distanceToUniKm),
+        };
+      })
+      .sort((a, b) => a.distanceToUniKm - b.distanceToUniKm);
+
+    const primaryUniversity = nearbyUniversities[0] || null;
+    const startingPrice =
+      property.rooms.length > 0 ? property.rooms[0].pricePerMonth : null;
+
+    return res.json({
+      ...property,
+      startingPrice,
+      distanceToUniKm: primaryUniversity ? primaryUniversity.distanceToUniKm : 1.2,
+      commute: primaryUniversity
+        ? primaryUniversity.commute
+        : { walkMins: 15, transitMins: 6 },
+      primaryUniversity,
+      nearbyUniversities,
+    });
+  } catch (error) {
+    console.error('GetPropertyById Error:', error);
+    return res.status(500).json({ error: 'Failed to fetch property details' });
+  }
+};
+
 exports.createProperty = async (req, res) => {
   try {
     const {
