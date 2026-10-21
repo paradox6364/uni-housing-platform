@@ -65,8 +65,8 @@ export default function LandlordPortal() {
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('London');
-  const [latitude, setLatitude] = useState(51.5246);
-  const [longitude, setLongitude] = useState(-0.134);
+  const [latitude, setLatitude] = useState(30.04446);
+  const [longitude, setLongitude] = useState(31.23565);
 
   // Property Images State
   const [images, setImages] = useState([

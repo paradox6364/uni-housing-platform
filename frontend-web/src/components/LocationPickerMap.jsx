@@ -54,8 +54,8 @@ export default function LocationPickerMap({
   longitude,
   onLocationChange,
 }) {
-  const lat = parseFloat(latitude) || 51.5246;
-  const lng = parseFloat(longitude) || -0.134;
+  const lat = parseFloat(latitude) || 30.04446;
+  const lng = parseFloat(longitude) || 31.23565;
   const position = useMemo(() => [lat, lng], [lat, lng]);
   const pinIcon = useMemo(() => createPinIcon(), []);
 
