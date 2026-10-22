@@ -1,28 +1,96 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import Navbar from '../../components/Navbar';
 import {
   fetchAllBookings,
+  fetchUniversities,
   createNewProperty,
   updateBookingStatus,
 } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 
+const LocationPickerMap = dynamic(
+  () => import('../../components/LocationPickerMap'),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="w-full h-80 rounded-xl bg-slate-100 animate-pulse flex items-center justify-center text-xs text-slate-400 border border-slate-200">
+        Loading interactive map picker...
+      </div>
+    ),
+  }
+);
+
+// Client-side image compressor so uploaded files stay lightweight
+const compressImageFile = (file, maxWidth = 1200, quality = 0.8) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        resolve(canvas.toDataURL('image/jpeg', quality));
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 export default function LandlordPortal() {
   const { user, loading: authLoading, isLandlord } = useAuth();
 
   const [bookings, setBookings] = useState([]);
+  const [universities, setUniversities] = useState([]);
+
+  // Property Details State
   const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('London');
-  const [latitude, setLatitude] = useState('51.5246');
-  const [longitude, setLongitude] = useState('-0.1340');
-  const [roomName, setRoomName] = useState('Classic En-Suite');
-  const [roomCategory, setRoomCategory] = useState('EN_SUITE');
+  const [latitude, setLatitude] = useState(30.04446);
+  const [longitude, setLongitude] = useState(31.23565);
+  const [flyToTarget, setFlyToTarget] = useState(null);
+
+  // Street Search Autocomplete State
+  const [streetQuery, setStreetQuery] = useState('');
+  const [streetResults, setStreetResults] = useState([]);
+  const [searchingStreet, setSearchingStreet] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchContainerRef = useRef(null);
+
+  // Property Images State
+  const [images, setImages] = useState([
+    'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80',
+  ]);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [uploadingPhotos, setUploadingPhotos] = useState(false);
+
+  // Initial Room Tier State
+  const [roomName, setRoomName] = useState('Classic Private Room');
+  const [roomCategory, setRoomCategory] = useState('PRIVATE_ROOM');
   const [pricePerMonth, setPricePerMonth] = useState('950');
-  const [createdMsg, setCreatedMsg] = useState('');
+  const [sizeSqm, setSizeSqm] = useState('18');
+
+  const [submitting, setSubmitting] = useState(false);
+  const [createdMsg, setCreatedMsg] = useState({ type: '', text: '' });
 
   const loadBookings = async () => {
     try {
@@ -34,26 +102,183 @@ export default function LandlordPortal() {
   };
 
   useEffect(() => {
+    fetchUniversities()
+      .then((data) => setUniversities(data || []))
+      .catch((err) => console.error('Failed to load universities:', err));
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && user && isLandlord) {
       loadBookings();
     }
   }, [authLoading, user, isLandlord]);
 
+  // Close street search dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (
+        searchContainerRef.current &&
+        !searchContainerRef.current.contains(e.target)
+      ) {
+        setShowDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Debounced Street Geocoding Search via OpenStreetMap Nominatim
+  useEffect(() => {
+    const trimmed = streetQuery.trim();
+    if (trimmed.length < 3) {
+      setStreetResults([]);
+      setSearchingStreet(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setSearchingStreet(true);
+      try {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=6&q=${encodeURIComponent(
+          trimmed
+        )}`;
+        const res = await fetch(url, {
+          headers: { 'Accept-Language': 'en' },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStreetResults(data || []);
+          setShowDropdown(true);
+        }
+      } catch (err) {
+        console.error('Street search failed:', err);
+      } finally {
+        setSearchingStreet(false);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [streetQuery]);
+
+  // Handle selecting a street option from the search dropdown
+  const handleSelectStreetResult = (place) => {
+    const lat = Number(parseFloat(place.lat).toFixed(6));
+    const lng = Number(parseFloat(place.lon).toFixed(6));
+
+    const addr = place.address || {};
+    const streetLine =
+      [
+        addr.house_number,
+        addr.road ||
+          addr.pedestrian ||
+          addr.footway ||
+          addr.suburb ||
+          addr.neighbourhood ||
+          place.name,
+      ]
+        .filter(Boolean)
+        .join(' ') || place.display_name.split(',')[0];
+
+    const detectedCity =
+      addr.city ||
+      addr.town ||
+      addr.municipality ||
+      addr.village ||
+      addr.county ||
+      addr.state ||
+      city;
+
+    setAddress(streetLine);
+    setCity(detectedCity);
+    setLatitude(lat);
+    setLongitude(lng);
+    setFlyToTarget({ lat, lng, zoom: 17, timestamp: Date.now() });
+    setStreetQuery(place.display_name);
+    setShowDropdown(false);
+  };
+
+  // Jump map camera to a selected university campus
+  const handleSelectCampusJump = (uniId) => {
+    const uni = universities.find((u) => u.id === uniId);
+    if (uni) {
+      const lat = Number((uni.latitude + 0.002).toFixed(6));
+      const lng = Number((uni.longitude + 0.002).toFixed(6));
+      setCity(uni.city);
+      setLatitude(lat);
+      setLongitude(lng);
+      setFlyToTarget({ lat, lng, zoom: 15, timestamp: Date.now() });
+    }
+  };
+
+  // Handle uploading one or multiple image files from disk
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setUploadingPhotos(true);
+    try {
+      const compressedDataUrls = await Promise.all(
+        files.map((file) => compressImageFile(file))
+      );
+      setImages((prev) => [...prev, ...compressedDataUrls]);
+    } catch (err) {
+      console.error('Failed to process uploaded images:', err);
+    } finally {
+      setUploadingPhotos(false);
+      e.target.value = '';
+    }
+  };
+
+  // Handle adding an external image URL
+  const handleAddImageUrl = () => {
+    const trimmed = imageUrlInput.trim();
+    if (!trimmed) return;
+    setImages((prev) => [...prev, trimmed]);
+    setImageUrlInput('');
+  };
+
+  const handleRemoveImage = (indexToRemove) => {
+    setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const handleSetCoverImage = (index) => {
+    if (index === 0) return;
+    setImages((prev) => {
+      const updated = [...prev];
+      const [picked] = updated.splice(index, 1);
+      return [picked, ...updated];
+    });
+  };
+
   const handleCreateProperty = async (e) => {
     e.preventDefault();
-    setCreatedMsg('');
+    setCreatedMsg({ type: '', text: '' });
+
+    if (images.length === 0) {
+      setCreatedMsg({
+        type: 'error',
+        text: 'Please upload or add at least one photo of the property.',
+      });
+      return;
+    }
+
+    setSubmitting(true);
     try {
       await createNewProperty({
         title,
-        description: `Modern student accommodation in ${city}`,
+        description:
+          description.trim() || `Modern student accommodation in ${city}`,
         address,
         city,
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
-        amenities: ['High-Speed Wi-Fi', '24/7 Security', 'Study Lounge', 'Laundry'],
-        images: [
-          'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80',
+        amenities: [
+          'High-Speed Wi-Fi',
+          '24/7 Security',
+          'Study Lounge',
+          'Laundry',
         ],
+        images,
         landlordId: user.id,
         rooms: [
           {
@@ -61,17 +286,27 @@ export default function LandlordPortal() {
             category: roomCategory,
             pricePerMonth: parseFloat(pricePerMonth),
             currency: 'USD',
-            sizeSqm: 18,
+            sizeSqm: parseFloat(sizeSqm) || 18,
             availableFrom: new Date('2026-09-01').toISOString(),
           },
         ],
       });
 
-      setCreatedMsg('Property published successfully!');
+      setCreatedMsg({
+        type: 'success',
+        text: 'Property published with exact map coordinates and photos!',
+      });
       setTitle('');
+      setDescription('');
       setAddress('');
+      setStreetQuery('');
     } catch (err) {
-      setCreatedMsg(err.message || 'Error creating property.');
+      setCreatedMsg({
+        type: 'error',
+        text: err.message || 'Error creating property.',
+      });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -128,7 +363,7 @@ export default function LandlordPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 pb-16">
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -138,7 +373,9 @@ export default function LandlordPortal() {
               Landlord Management Portal
             </h1>
             <p className="text-sm text-slate-500">
-              Signed in as <span className="font-semibold text-slate-700">{user.name}</span> ({user.email})
+              Signed in as{' '}
+              <span className="font-semibold text-slate-700">{user.name}</span> (
+              {user.email})
             </p>
           </div>
           <span className="self-start sm:self-auto text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-amber-100 text-amber-800">
@@ -146,78 +383,72 @@ export default function LandlordPortal() {
           </span>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Publish New Property Form */}
-          <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900 mb-4">
-              Publish New Property
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left 7 Columns: Publish New Property Studio */}
+          <div className="lg:col-span-7 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+            <h2 className="text-lg font-bold text-slate-900 mb-1">
+              Publish New Student Property
             </h2>
+            <p className="text-xs text-slate-500 mb-6">
+              Search for a street to jump the map, fine-tune the pin on the exact building, and upload property photos.
+            </p>
 
-            <form onSubmit={handleCreateProperty} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                  Property Title
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="e.g., Bloomsbury Student Studios"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
+            <form onSubmit={handleCreateProperty} className="space-y-6">
+              {/* Step 1: Basic Info */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                      Property Title
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="e.g., Bloomsbury Student Studios"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                  Street Address
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="42 Gower Street"
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                />
-              </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                      City
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      placeholder="London"
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+                </div>
 
-              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                    City
+                    Street Address
                   </label>
                   <input
                     type="text"
                     required
-                    value={city}
-                    onChange={(e) => setCity(e.target.value)}
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="42 Gower Street (or use street search below)"
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
+
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                    Latitude
+                    Property Description
                   </label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    value={latitude}
-                    onChange={(e) => setLatitude(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                    Longitude
-                  </label>
-                  <input
-                    type="number"
-                    step="any"
-                    required
-                    value={longitude}
-                    onChange={(e) => setLongitude(e.target.value)}
+                  <textarea
+                    rows={2}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Describe the residence, study spaces, nearby transport, and security..."
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
@@ -225,70 +456,310 @@ export default function LandlordPortal() {
 
               <hr className="border-slate-200" />
 
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                  Initial Room Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={roomName}
-                  onChange={(e) => setRoomName(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              {/* Step 2: Street Search Autocomplete + Interactive Map Location Picker */}
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase">
+                      Search Street & Pinpoint Property Location
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      Search for a street to fly the map there, then click or drag the pin onto the exact building.
+                    </p>
+                  </div>
+
+                  {universities.length > 0 && (
+                    <select
+                      onChange={(e) => handleSelectCampusJump(e.target.value)}
+                      defaultValue=""
+                      className="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-slate-50 text-slate-700 font-medium"
+                    >
+                      <option value="" disabled>
+                        🎯 Or jump near university...
+                      </option>
+                      {universities.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name} ({u.city})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {/* Street Search Input & Autocomplete Dropdown */}
+                <div ref={searchContainerRef} className="relative">
+                  <div className="relative flex items-center">
+                    <span className="absolute left-3 text-slate-400 text-sm pointer-events-none">
+                      🔍
+                    </span>
+                    <input
+                      type="text"
+                      value={streetQuery}
+                      onFocus={() => {
+                        if (streetResults.length > 0) setShowDropdown(true);
+                      }}
+                      onChange={(e) => {
+                        setStreetQuery(e.target.value);
+                        setShowDropdown(true);
+                      }}
+                      placeholder="Search street, neighborhood, or landmark (e.g., Gower Street, London)..."
+                      className="w-full pl-9 pr-20 py-2.5 text-xs sm:text-sm border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50/60"
+                    />
+                    {searchingStreet && (
+                      <span className="absolute right-3 text-[11px] text-blue-600 font-semibold animate-pulse">
+                        Searching...
+                      </span>
+                    )}
+                    {!searchingStreet && streetQuery && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setStreetQuery('');
+                          setStreetResults([]);
+                          setShowDropdown(false);
+                        }}
+                        className="absolute right-3 text-xs text-slate-400 hover:text-slate-600 font-semibold"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Matching Street Options Dropdown */}
+                  {showDropdown && streetResults.length > 0 && (
+                    <ul className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-xl max-h-60 overflow-y-auto z-[1000] divide-y divide-slate-100">
+                      {streetResults.map((place) => (
+                        <li key={place.place_id}>
+                          <button
+                            type="button"
+                            onClick={() => handleSelectStreetResult(place)}
+                            className="w-full text-left px-4 py-2.5 hover:bg-blue-50 transition flex items-start gap-2.5"
+                          >
+                            <span className="text-blue-600 mt-0.5 shrink-0">
+                              📍
+                            </span>
+                            <div className="min-w-0">
+                              <p className="text-xs font-bold text-slate-900 truncate">
+                                {place.display_name.split(',')[0]}
+                              </p>
+                              <p className="text-[11px] text-slate-500 line-clamp-1">
+                                {place.display_name}
+                              </p>
+                            </div>
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+
+                  {showDropdown &&
+                    !searchingStreet &&
+                    streetQuery.trim().length >= 3 &&
+                    streetResults.length === 0 && (
+                      <div className="absolute left-0 right-0 mt-1.5 bg-white border border-slate-200 rounded-xl shadow-lg p-3 text-xs text-slate-500 text-center z-[1000]">
+                        No matching streets found. Try adding the city name (e.g., &ldquo;Tahrir Street, Cairo&rdquo;).
+                      </div>
+                    )}
+                </div>
+
+                <LocationPickerMap
+                  latitude={latitude}
+                  longitude={longitude}
+                  flyToTarget={flyToTarget}
+                  onLocationChange={(lat, lng) => {
+                    setLatitude(lat);
+                    setLongitude(lng);
+                  }}
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                    Category
+              <hr className="border-slate-200" />
+
+              {/* Step 3: Property Photos Uploader & Gallery */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                  Property Photos ({images.length})
+                </label>
+                <p className="text-[11px] text-slate-500 mb-3">
+                  Upload photos from your computer or paste an image URL. The first photo is used as the cover image.
+                </p>
+
+                <div className="flex flex-col sm:flex-row gap-2 mb-4">
+                  {/* Upload from Device Button */}
+                  <label className="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold transition shrink-0">
+                    <span>
+                      📷 {uploadingPhotos ? 'Processing...' : 'Upload Photos'}
+                    </span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={uploadingPhotos}
+                    />
                   </label>
-                  <select
-                    value={roomCategory}
-                    onChange={(e) => setRoomCategory(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                  >
-                    <option value="PRIVATE_ROOM">Private Room</option>
-                    <option value="EN_SUITE">En-Suite</option>
-                    <option value="ENTIRE_PLACE">Studio / Entire Place</option>
-                    <option value="SHARED_ROOM">Shared Room</option>
-                  </select>
+
+                  {/* Or Paste Image URL */}
+                  <div className="flex flex-1 gap-2">
+                    <input
+                      type="url"
+                      value={imageUrlInput}
+                      onChange={(e) => setImageUrlInput(e.target.value)}
+                      placeholder="Or paste image URL (https://...)"
+                      className="flex-1 border border-slate-300 rounded-lg px-3 py-2 text-xs"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAddImageUrl}
+                      className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold transition shrink-0"
+                    >
+                      Add URL
+                    </button>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
-                    Price / Month ($)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={pricePerMonth}
-                    onChange={(e) => setPricePerMonth(e.target.value)}
-                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                  />
+                {/* Photo Previews Grid */}
+                {images.length === 0 ? (
+                  <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-xs text-slate-400">
+                    No photos added yet. Upload files or add an image URL above.
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    {images.map((imgSrc, idx) => (
+                      <div
+                        key={idx}
+                        className={`relative group h-24 rounded-xl overflow-hidden border-2 ${
+                          idx === 0 ? 'border-blue-600' : 'border-slate-200'
+                        }`}
+                      >
+                        <img
+                          src={imgSrc}
+                          alt={`Property preview ${idx + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+
+                        {idx === 0 ? (
+                          <span className="absolute top-1.5 left-1.5 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">
+                            Cover
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleSetCoverImage(idx)}
+                            className="opacity-0 group-hover:opacity-100 absolute bottom-1.5 left-1.5 bg-slate-900/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded transition"
+                          >
+                            Make Cover
+                          </button>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveImage(idx)}
+                          className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center shadow hover:bg-red-700"
+                          title="Remove photo"
+                        >
+                          &times;
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <hr className="border-slate-200" />
+
+              {/* Step 4: Initial Room Configuration */}
+              <div>
+                <h3 className="text-xs font-bold text-slate-700 uppercase mb-3">
+                  Initial Room Tier Details
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                      Room Tier Name
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={roomName}
+                      onChange={(e) => setRoomName(e.target.value)}
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                      Category
+                    </label>
+                    <select
+                      value={roomCategory}
+                      onChange={(e) => setRoomCategory(e.target.value)}
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm bg-white"
+                    >
+                      <option value="PRIVATE_ROOM">Private Room</option>
+                      <option value="ENTIRE_PLACE">Studio / Entire Place</option>
+                      <option value="SHARED_ROOM">Shared Room</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                      Price / Month ($)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={pricePerMonth}
+                      onChange={(e) => setPricePerMonth(e.target.value)}
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                      Room Size (m²)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={sizeSqm}
+                      onChange={(e) => setSizeSqm(e.target.value)}
+                      className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                    />
+                  </div>
                 </div>
               </div>
 
               <button
                 type="submit"
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 rounded-lg text-sm transition"
+                disabled={submitting || uploadingPhotos}
+                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 rounded-xl text-sm transition shadow-sm"
               >
-                Publish Listing
+                {submitting
+                  ? 'Publishing Property...'
+                  : 'Publish Property Listing'}
               </button>
 
-              {createdMsg && (
-                <p className="text-sm font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 p-2.5 rounded-lg">
-                  {createdMsg}
-                </p>
+              {createdMsg.text && (
+                <div
+                  className={`text-sm font-medium p-3 rounded-xl border ${
+                    createdMsg.type === 'error'
+                      ? 'bg-red-50 text-red-700 border-red-200'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                  }`}
+                >
+                  {createdMsg.text}
+                </div>
               )}
             </form>
           </div>
 
-          {/* Incoming Student Booking Requests */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          {/* Right 5 Columns: Incoming Student Booking Requests */}
+          <div className="lg:col-span-5 bg-white p-6 rounded-2xl shadow-sm border border-slate-200 h-fit">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-slate-900">
-                Incoming Student Booking Requests
+                Incoming Student Bookings
               </h2>
               <button
                 onClick={loadBookings}
@@ -307,23 +778,25 @@ export default function LandlordPortal() {
                 {bookings.map((b) => (
                   <div
                     key={b.id}
-                    className="p-4 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                    className="p-4 rounded-xl border border-slate-200 flex flex-col justify-between gap-3"
                   >
                     <div>
-                      <h3 className="font-bold text-slate-900">
+                      <h3 className="font-bold text-slate-900 text-sm">
                         {b.roomType?.property?.title || 'Property'} —{' '}
                         <span className="text-blue-600">{b.roomType?.name}</span>
                       </h3>
-                      <p className="text-sm text-slate-600">
-                        Student: <strong>{b.student?.name}</strong> ({b.student?.email})
+                      <p className="text-xs text-slate-600 mt-0.5">
+                        Student: <strong>{b.student?.name}</strong> (
+                        {b.student?.email})
                       </p>
                       <p className="text-xs text-slate-400 mt-1">
                         Move-in: {new Date(b.moveInDate).toLocaleDateString()} •{' '}
-                        {b.durationMonths} months • ${b.roomType?.pricePerMonth}/mo
+                        {b.durationMonths} months • $
+                        {b.roomType?.pricePerMonth}/mo
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100">
                       <span
                         className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                           b.status === 'APPROVED'
@@ -337,7 +810,7 @@ export default function LandlordPortal() {
                       </span>
 
                       {b.status === 'PENDING' && (
-                        <>
+                        <div className="flex items-center gap-2">
                           <button
                             onClick={() => handleStatus(b.id, 'APPROVED')}
                             className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
@@ -350,7 +823,7 @@ export default function LandlordPortal() {
                           >
                             Reject
                           </button>
-                        </>
+                        </div>
                       )}
                     </div>
                   </div>
