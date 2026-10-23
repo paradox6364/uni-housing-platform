@@ -6,8 +6,11 @@ import dynamic from 'next/dynamic';
 import Navbar from '../../components/Navbar';
 import {
   fetchAllBookings,
+  fetchMyProperties,
   fetchUniversities,
   createNewProperty,
+  updateProperty,
+  deleteProperty,
   updateBookingStatus,
 } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
@@ -38,6 +41,9 @@ const AMENITY_OPTIONS = [
   'Elevator Access',
   'Cleaning Service',
 ];
+
+const DEFAULT_COVER_IMAGE =
+  'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80';
 
 // Client-side image compressor so uploaded files stay lightweight
 const compressImageFile = (file, maxWidth = 1200, quality = 0.8) => {
@@ -73,7 +79,14 @@ export default function LandlordPortal() {
   const { user, loading: authLoading, isLandlord } = useAuth();
 
   const [bookings, setBookings] = useState([]);
+  const [myProperties, setMyProperties] = useState([]);
+  const [loadingProperties, setLoadingProperties] = useState(false);
   const [universities, setUniversities] = useState([]);
+
+  // Edit Mode State (null = creating new property, UUID = editing existing property)
+  const [editingPropertyId, setEditingPropertyId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
+  const formTopRef = useRef(null);
 
   // Property Details State
   const [title, setTitle] = useState('');
@@ -84,7 +97,7 @@ export default function LandlordPortal() {
   const [longitude, setLongitude] = useState(-0.134);
   const [flyToTarget, setFlyToTarget] = useState(null);
 
-  // Amenities State (Starts empty so only landlord-checked items appear)
+  // Amenities State
   const [selectedAmenities, setSelectedAmenities] = useState([]);
   const [customAmenity, setCustomAmenity] = useState('');
 
@@ -96,9 +109,7 @@ export default function LandlordPortal() {
   const searchContainerRef = useRef(null);
 
   // Property Images State
-  const [images, setImages] = useState([
-    'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80',
-  ]);
+  const [images, setImages] = useState([DEFAULT_COVER_IMAGE]);
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [uploadingPhotos, setUploadingPhotos] = useState(false);
 
@@ -120,6 +131,18 @@ export default function LandlordPortal() {
     }
   };
 
+  const loadMyProperties = async () => {
+    setLoadingProperties(true);
+    try {
+      const data = await fetchMyProperties();
+      setMyProperties(data || []);
+    } catch (err) {
+      console.error('Failed to load landlord properties:', err);
+    } finally {
+      setLoadingProperties(false);
+    }
+  };
+
   useEffect(() => {
     fetchUniversities()
       .then((data) => setUniversities(data || []))
@@ -129,6 +152,7 @@ export default function LandlordPortal() {
   useEffect(() => {
     if (!authLoading && user && isLandlord) {
       loadBookings();
+      loadMyProperties();
     }
   }, [authLoading, user, isLandlord]);
 
@@ -178,6 +202,83 @@ export default function LandlordPortal() {
 
     return () => clearTimeout(timer);
   }, [streetQuery]);
+
+  const resetForm = () => {
+    setEditingPropertyId(null);
+    setTitle('');
+    setDescription('');
+    setAddress('');
+    setCity('London');
+    setLatitude(51.5246);
+    setLongitude(-0.134);
+    setSelectedAmenities([]);
+    setImages([DEFAULT_COVER_IMAGE]);
+    setRoomName('Classic Private Room');
+    setRoomCategory('PRIVATE_ROOM');
+    setPricePerMonth('950');
+    setSizeSqm('18');
+    setStreetQuery('');
+  };
+
+  // Populate the form to edit an existing property
+  const handleStartEdit = (property) => {
+    setEditingPropertyId(property.id);
+    setCreatedMsg({ type: '', text: '' });
+    setTitle(property.title || '');
+    setDescription(property.description || '');
+    setAddress(property.address || '');
+    setCity(property.city || 'London');
+    setLatitude(property.latitude || 51.5246);
+    setLongitude(property.longitude || -0.134);
+    setFlyToTarget({
+      lat: property.latitude || 51.5246,
+      lng: property.longitude || -0.134,
+      zoom: 17,
+      timestamp: Date.now(),
+    });
+    setSelectedAmenities(
+      Array.isArray(property.amenities) ? property.amenities : []
+    );
+    setImages(
+      Array.isArray(property.images) && property.images.length > 0
+        ? property.images
+        : [DEFAULT_COVER_IMAGE]
+    );
+
+    const primaryRoom = property.rooms?.[0];
+    if (primaryRoom) {
+      setRoomName(primaryRoom.name || 'Classic Private Room');
+      setRoomCategory(primaryRoom.category || 'PRIVATE_ROOM');
+      setPricePerMonth(String(primaryRoom.pricePerMonth ?? 950));
+      setSizeSqm(String(primaryRoom.sizeSqm ?? 18));
+    }
+
+    if (formTopRef.current) {
+      formTopRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Delete an existing property
+  const handleDeleteProperty = async (property) => {
+    const confirmed = window.confirm(
+      `Are you sure you want to delete "${property.title}"? This will also remove its rooms and associated booking requests.`
+    );
+    if (!confirmed) return;
+
+    setDeletingId(property.id);
+    try {
+      await deleteProperty(property.id);
+      if (editingPropertyId === property.id) {
+        resetForm();
+      }
+      await loadMyProperties();
+      await loadBookings();
+    } catch (err) {
+      alert(err.message || 'Failed to delete property.');
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   // Toggle an amenity checkbox on or off
   const handleToggleAmenity = (amenity) => {
@@ -288,7 +389,7 @@ export default function LandlordPortal() {
     });
   };
 
-  const handleCreateProperty = async (e) => {
+  const handleSubmitProperty = async (e) => {
     e.preventDefault();
     setCreatedMsg({ type: '', text: '' });
 
@@ -300,44 +401,51 @@ export default function LandlordPortal() {
       return;
     }
 
+    const payload = {
+      title,
+      description:
+        description.trim() || `Modern student accommodation in ${city}`,
+      address,
+      city,
+      latitude: parseFloat(latitude),
+      longitude: parseFloat(longitude),
+      amenities: selectedAmenities,
+      images,
+      landlordId: user.id,
+      rooms: [
+        {
+          name: roomName,
+          category: roomCategory,
+          pricePerMonth: parseFloat(pricePerMonth),
+          currency: 'USD',
+          sizeSqm: parseFloat(sizeSqm) || 18,
+          availableFrom: new Date('2026-09-01').toISOString(),
+        },
+      ],
+    };
+
     setSubmitting(true);
     try {
-      await createNewProperty({
-        title,
-        description:
-          description.trim() || `Modern student accommodation in ${city}`,
-        address,
-        city,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-        amenities: selectedAmenities,
-        images,
-        landlordId: user.id,
-        rooms: [
-          {
-            name: roomName,
-            category: roomCategory,
-            pricePerMonth: parseFloat(pricePerMonth),
-            currency: 'USD',
-            sizeSqm: parseFloat(sizeSqm) || 18,
-            availableFrom: new Date('2026-09-01').toISOString(),
-          },
-        ],
-      });
-
-      setCreatedMsg({
-        type: 'success',
-        text: 'Property published with your selected amenities, coordinates, and photos!',
-      });
-      setTitle('');
-      setDescription('');
-      setAddress('');
-      setStreetQuery('');
-      setSelectedAmenities([]);
+      if (editingPropertyId) {
+        await updateProperty(editingPropertyId, payload);
+        setCreatedMsg({
+          type: 'success',
+          text: 'Property changes saved successfully!',
+        });
+        resetForm();
+      } else {
+        await createNewProperty(payload);
+        setCreatedMsg({
+          type: 'success',
+          text: 'Property published with your selected amenities, coordinates, and photos!',
+        });
+        resetForm();
+      }
+      await loadMyProperties();
     } catch (err) {
       setCreatedMsg({
         type: 'error',
-        text: err.message || 'Error creating property.',
+        text: err.message || 'Error saving property.',
       });
     } finally {
       setSubmitting(false);
@@ -353,7 +461,6 @@ export default function LandlordPortal() {
     }
   };
 
-  // Combine standard options with any custom amenities added by the landlord
   const allDisplayAmenities = Array.from(
     new Set([...AMENITY_OPTIONS, ...selectedAmenities])
   );
@@ -406,7 +513,10 @@ export default function LandlordPortal() {
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+        <div
+          ref={formTopRef}
+          className="mb-8 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2"
+        >
           <div>
             <h1 className="text-2xl font-bold text-slate-900">
               Landlord Management Portal
@@ -423,16 +533,37 @@ export default function LandlordPortal() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left 7 Columns: Publish New Property Studio */}
-          <div className="lg:col-span-7 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-900 mb-1">
-              Publish New Student Property
-            </h2>
+          {/* Left 7 Columns: Publish / Edit Property Studio */}
+          <div
+            className={`lg:col-span-7 bg-white p-6 rounded-2xl shadow-sm border transition ${
+              editingPropertyId
+                ? 'border-amber-400 ring-2 ring-amber-400/20'
+                : 'border-slate-200'
+            }`}
+          >
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <h2 className="text-lg font-bold text-slate-900">
+                {editingPropertyId
+                  ? '✏️ Edit Student Property'
+                  : 'Publish New Student Property'}
+              </h2>
+              {editingPropertyId && (
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="text-xs font-semibold text-slate-600 hover:text-red-600 px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-red-50 transition"
+                >
+                  Cancel Edit
+                </button>
+              )}
+            </div>
             <p className="text-xs text-slate-500 mb-6">
-              Search for a street to jump the map, select included amenities, and upload property photos.
+              {editingPropertyId
+                ? 'Update your property details, map pin, amenities, photos, or room pricing below.'
+                : 'Search for a street to jump the map, select included amenities, and upload property photos.'}
             </p>
 
-            <form onSubmit={handleCreateProperty} className="space-y-6">
+            <form onSubmit={handleSubmitProperty} className="space-y-6">
               {/* Step 1: Basic Info */}
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -695,7 +826,6 @@ export default function LandlordPortal() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                  {/* Upload from Device Button */}
                   <label className="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 text-xs font-semibold transition shrink-0">
                     <span>
                       📷 {uploadingPhotos ? 'Processing...' : 'Upload Photos'}
@@ -710,7 +840,6 @@ export default function LandlordPortal() {
                     />
                   </label>
 
-                  {/* Or Paste Image URL */}
                   <div className="flex flex-1 gap-2">
                     <input
                       type="url"
@@ -729,7 +858,6 @@ export default function LandlordPortal() {
                   </div>
                 </div>
 
-                {/* Photo Previews Grid */}
                 {images.length === 0 ? (
                   <div className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center text-xs text-slate-400">
                     No photos added yet. Upload files or add an image URL above.
@@ -782,7 +910,7 @@ export default function LandlordPortal() {
               {/* Step 5: Initial Room Configuration */}
               <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase mb-3">
-                  Initial Room Tier Details
+                  Primary Room Tier Details
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
@@ -841,15 +969,33 @@ export default function LandlordPortal() {
                 </div>
               </div>
 
-              <button
-                type="submit"
-                disabled={submitting || uploadingPhotos}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-3 rounded-xl text-sm transition shadow-sm"
-              >
-                {submitting
-                  ? 'Publishing Property...'
-                  : 'Publish Property Listing'}
-              </button>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={submitting || uploadingPhotos}
+                  className={`flex-1 text-white font-semibold py-3 rounded-xl text-sm transition shadow-sm ${
+                    editingPropertyId
+                      ? 'bg-amber-600 hover:bg-amber-700 disabled:bg-amber-400'
+                      : 'bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400'
+                  }`}
+                >
+                  {submitting
+                    ? 'Saving...'
+                    : editingPropertyId
+                    ? 'Save Property Changes'
+                    : 'Publish Property Listing'}
+                </button>
+
+                {editingPropertyId && (
+                  <button
+                    type="button"
+                    onClick={resetForm}
+                    className="px-5 py-3 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-sm font-semibold transition"
+                  >
+                    Cancel
+                  </button>
+                )}
+              </div>
 
               {createdMsg.text && (
                 <div
@@ -942,6 +1088,123 @@ export default function LandlordPortal() {
             )}
           </div>
         </div>
+
+        {/* My Listed Properties Section */}
+        <section className="mt-10 bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">
+                My Listed Properties ({myProperties.length})
+              </h2>
+              <p className="text-xs text-slate-500">
+                View, edit details, or remove the student properties you have published.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={loadMyProperties}
+              className="text-xs font-semibold text-blue-600 hover:underline"
+            >
+              Refresh List
+            </button>
+          </div>
+
+          {loadingProperties ? (
+            <p className="text-sm text-slate-500 py-8 text-center">
+              Loading your properties...
+            </p>
+          ) : myProperties.length === 0 ? (
+            <div className="border-2 border-dashed border-slate-200 rounded-xl p-8 text-center text-sm text-slate-500">
+              You haven&apos;t published any properties yet. Use the form above to create your first listing.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {myProperties.map((prop) => {
+                const cover = prop.images?.[0] || DEFAULT_COVER_IMAGE;
+                const primaryRoom = prop.rooms?.[0];
+                const isBeingEdited = editingPropertyId === prop.id;
+
+                return (
+                  <div
+                    key={prop.id}
+                    className={`rounded-2xl border overflow-hidden flex flex-col justify-between transition ${
+                      isBeingEdited
+                        ? 'border-amber-500 ring-2 ring-amber-400/30 bg-amber-50/20'
+                        : 'border-slate-200 bg-white hover:shadow-md'
+                    }`}
+                  >
+                    <div>
+                      <div className="relative h-40 bg-slate-100">
+                        <img
+                          src={cover}
+                          alt={prop.title}
+                          className="w-full h-full object-cover"
+                        />
+                        <span className="absolute top-2.5 left-2.5 bg-slate-900/80 text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-full">
+                          {prop.city}
+                        </span>
+                        {primaryRoom && (
+                          <span className="absolute bottom-2.5 right-2.5 bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow">
+                            ${primaryRoom.pricePerMonth}/mo
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="p-4">
+                        <h3 className="font-bold text-slate-900 text-base truncate">
+                          {prop.title}
+                        </h3>
+                        <p className="text-xs text-slate-500 truncate mt-0.5">
+                          {prop.address}, {prop.city}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-slate-600">
+                          <span className="bg-slate-100 px-2 py-0.5 rounded font-medium">
+                            🛏️ {prop.rooms?.length || 0}{' '}
+                            {prop.rooms?.length === 1 ? 'room tier' : 'room tiers'}
+                          </span>
+                          <span className="bg-slate-100 px-2 py-0.5 rounded font-medium">
+                            ✨ {prop.amenities?.length || 0} amenities
+                          </span>
+                          <span className="bg-slate-100 px-2 py-0.5 rounded font-medium">
+                            📷 {prop.images?.length || 0} photos
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="px-4 py-3 bg-slate-50 border-t border-slate-100 flex items-center justify-between gap-2">
+                      <Link
+                        href={`/properties/${prop.id}`}
+                        className="text-xs font-semibold text-blue-600 hover:underline"
+                      >
+                        View Page &rarr;
+                      </Link>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEdit(prop)}
+                          className="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-semibold transition"
+                        >
+                          {isBeingEdited ? 'Editing...' : 'Edit'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteProperty(prop)}
+                          disabled={deletingId === prop.id}
+                          className="px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 disabled:opacity-50 text-red-700 text-xs font-semibold transition"
+                        >
+                          {deletingId === prop.id ? 'Deleting...' : 'Delete'}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </section>
       </main>
     </div>
   );

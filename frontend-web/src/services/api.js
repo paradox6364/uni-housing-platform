@@ -66,6 +66,15 @@ export async function fetchPropertyById(propertyId) {
   return data;
 }
 
+export async function fetchMyProperties() {
+  const res = await fetch(`${API_BASE_URL}/listings/my`, {
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to fetch your properties');
+  return data;
+}
+
 export async function createNewProperty(propertyData) {
   const res = await fetch(`${API_BASE_URL}/listings`, {
     method: 'POST',
@@ -74,6 +83,27 @@ export async function createNewProperty(propertyData) {
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Failed to create property');
+  return data;
+}
+
+export async function updateProperty(propertyId, propertyData) {
+  const res = await fetch(`${API_BASE_URL}/listings/${propertyId}`, {
+    method: 'PUT',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(propertyData),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to update property');
+  return data;
+}
+
+export async function deleteProperty(propertyId) {
+  const res = await fetch(`${API_BASE_URL}/listings/${propertyId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to delete property');
   return data;
 }
 
