@@ -72,14 +72,10 @@ export default function PropertyDetailsPage() {
 
   const galleryImages = useMemo(() => {
     if (!property) return FALLBACK_GALLERY;
-    const base = Array.isArray(property.images) ? property.images : [];
-    const combined = [...base];
-    for (const img of FALLBACK_GALLERY) {
-      if (combined.length < 4 && !combined.includes(img)) {
-        combined.push(img);
-      }
+    if (Array.isArray(property.images) && property.images.length > 0) {
+      return property.images;
     }
-    return combined;
+    return [FALLBACK_GALLERY[0]];
   }, [property]);
 
   const filteredRooms = useMemo(() => {

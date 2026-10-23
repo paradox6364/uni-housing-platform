@@ -24,6 +24,21 @@ const LocationPickerMap = dynamic(
   }
 );
 
+const AMENITY_OPTIONS = [
+  'High-Speed Wi-Fi',
+  'All Bills Included',
+  '24/7 Security & CCTV',
+  'Air Conditioning',
+  'Study Lounge',
+  'On-Site Laundry',
+  'Gym & Fitness Center',
+  'Fully Furnished',
+  'Shared Kitchen',
+  'Bike Storage',
+  'Elevator Access',
+  'Cleaning Service',
+];
+
 // Client-side image compressor so uploaded files stay lightweight
 const compressImageFile = (file, maxWidth = 1200, quality = 0.8) => {
   return new Promise((resolve, reject) => {
@@ -65,9 +80,13 @@ export default function LandlordPortal() {
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
   const [city, setCity] = useState('London');
-  const [latitude, setLatitude] = useState(30.04446);
-  const [longitude, setLongitude] = useState(31.23565);
+  const [latitude, setLatitude] = useState(51.5246);
+  const [longitude, setLongitude] = useState(-0.134);
   const [flyToTarget, setFlyToTarget] = useState(null);
+
+  // Amenities State (Starts empty so only landlord-checked items appear)
+  const [selectedAmenities, setSelectedAmenities] = useState([]);
+  const [customAmenity, setCustomAmenity] = useState('');
 
   // Street Search Autocomplete State
   const [streetQuery, setStreetQuery] = useState('');
@@ -159,6 +178,25 @@ export default function LandlordPortal() {
 
     return () => clearTimeout(timer);
   }, [streetQuery]);
+
+  // Toggle an amenity checkbox on or off
+  const handleToggleAmenity = (amenity) => {
+    setSelectedAmenities((prev) =>
+      prev.includes(amenity)
+        ? prev.filter((item) => item !== amenity)
+        : [...prev, amenity]
+    );
+  };
+
+  // Allow landlord to add a custom amenity checkbox
+  const handleAddCustomAmenity = () => {
+    const trimmed = customAmenity.trim();
+    if (!trimmed) return;
+    if (!selectedAmenities.includes(trimmed)) {
+      setSelectedAmenities((prev) => [...prev, trimmed]);
+    }
+    setCustomAmenity('');
+  };
 
   // Handle selecting a street option from the search dropdown
   const handleSelectStreetResult = (place) => {
@@ -272,12 +310,7 @@ export default function LandlordPortal() {
         city,
         latitude: parseFloat(latitude),
         longitude: parseFloat(longitude),
-        amenities: [
-          'High-Speed Wi-Fi',
-          '24/7 Security',
-          'Study Lounge',
-          'Laundry',
-        ],
+        amenities: selectedAmenities,
         images,
         landlordId: user.id,
         rooms: [
@@ -294,12 +327,13 @@ export default function LandlordPortal() {
 
       setCreatedMsg({
         type: 'success',
-        text: 'Property published with exact map coordinates and photos!',
+        text: 'Property published with your selected amenities, coordinates, and photos!',
       });
       setTitle('');
       setDescription('');
       setAddress('');
       setStreetQuery('');
+      setSelectedAmenities([]);
     } catch (err) {
       setCreatedMsg({
         type: 'error',
@@ -318,6 +352,11 @@ export default function LandlordPortal() {
       console.error('Failed to update status:', err);
     }
   };
+
+  // Combine standard options with any custom amenities added by the landlord
+  const allDisplayAmenities = Array.from(
+    new Set([...AMENITY_OPTIONS, ...selectedAmenities])
+  );
 
   if (authLoading) {
     return (
@@ -390,7 +429,7 @@ export default function LandlordPortal() {
               Publish New Student Property
             </h2>
             <p className="text-xs text-slate-500 mb-6">
-              Search for a street to jump the map, fine-tune the pin on the exact building, and upload property photos.
+              Search for a street to jump the map, select included amenities, and upload property photos.
             </p>
 
             <form onSubmit={handleCreateProperty} className="space-y-6">
@@ -575,7 +614,78 @@ export default function LandlordPortal() {
 
               <hr className="border-slate-200" />
 
-              {/* Step 3: Property Photos Uploader & Gallery */}
+              {/* Step 3: Amenities & Facilities Checkboxes */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-600 uppercase">
+                    Amenities & Facilities ({selectedAmenities.length} selected)
+                  </label>
+                  {selectedAmenities.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => setSelectedAmenities([])}
+                      className="text-[11px] text-slate-400 hover:text-red-600 font-medium"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+                <p className="text-[11px] text-slate-500 mb-3">
+                  Check the facilities included with this property. Only checked items will be shown on the listing page.
+                </p>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-3">
+                  {allDisplayAmenities.map((amenity) => {
+                    const isChecked = selectedAmenities.includes(amenity);
+                    return (
+                      <label
+                        key={amenity}
+                        className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-xs font-medium cursor-pointer select-none transition ${
+                          isChecked
+                            ? 'bg-blue-50 border-blue-600 text-blue-800 shadow-sm'
+                            : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => handleToggleAmenity(amenity)}
+                          className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
+                        />
+                        <span className="truncate">{amenity}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+
+                {/* Add Custom Amenity Input */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={customAmenity}
+                    onChange={(e) => setCustomAmenity(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCustomAmenity();
+                      }
+                    }}
+                    placeholder="Add custom facility (e.g., Rooftop Terrace, Cinema Room)..."
+                    className="flex-1 border border-slate-300 rounded-lg px-3 py-1.5 text-xs"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddCustomAmenity}
+                    className="px-3.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition shrink-0"
+                  >
+                    + Add Custom
+                  </button>
+                </div>
+              </div>
+
+              <hr className="border-slate-200" />
+
+              {/* Step 4: Property Photos Uploader & Gallery */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
                   Property Photos ({images.length})
@@ -669,7 +779,7 @@ export default function LandlordPortal() {
 
               <hr className="border-slate-200" />
 
-              {/* Step 4: Initial Room Configuration */}
+              {/* Step 5: Initial Room Configuration */}
               <div>
                 <h3 className="text-xs font-bold text-slate-700 uppercase mb-3">
                   Initial Room Tier Details
