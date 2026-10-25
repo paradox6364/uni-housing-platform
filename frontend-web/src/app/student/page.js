@@ -95,7 +95,7 @@ export default function StudentDashboardPage() {
                   </p>
                   <p className="text-xs text-slate-400 mt-1">
                     Move-in: {new Date(b.moveInDate).toLocaleDateString()} • Lease:{' '}
-                    {b.leaseDurationMonths} months
+                    {b.durationMonths} months
                   </p>
                 </div>
                 <div>

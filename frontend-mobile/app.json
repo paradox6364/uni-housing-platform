@@ -10,6 +10,9 @@
     },
     "android": {
       "package": "com.unihousing.app"
-    }
+    },
+    "plugins": [
+      "expo-status-bar"
+    ]
   }
 }

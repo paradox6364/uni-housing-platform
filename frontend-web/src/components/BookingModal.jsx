@@ -1,156 +1,217 @@
-'use client';
-import { useState } from 'react';
-import { X, CheckCircle2, Calendar } from 'lucide-react';
-import { submitBookingRequest } from '../services/api';
+"use client";
 
-export default function BookingModal({ property, onClose }) {
-  const [selectedRoomId, setSelectedRoomId] = useState(property?.rooms?.[0]?.id || '');
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
+import { submitBookingRequest } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+
+export default function BookingModal({
+  property,
+  isOpen = true,
+  initialRoomId = '',
+  initialDurationMonths = 9,
+  onClose,
+}) {
+  const { user, isLandlord } = useAuth();
+
+  const rooms = property?.rooms || property?.roomTypes || [];
+
+  const [selectedRoomId, setSelectedRoomId] = useState(
+    initialRoomId || rooms[0]?.id || ''
+  );
   const [studentName, setStudentName] = useState('');
   const [studentEmail, setStudentEmail] = useState('');
   const [moveInDate, setMoveInDate] = useState('2026-09-01');
-  const [durationMonths, setDurationMonths] = useState(9);
-  const [message, setMessage] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [durationMonths, setDurationMonths] = useState(initialDurationMonths || 9);
+  const [statusMsg, setStatusMsg] = useState(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  if (!property) return null;
+  useEffect(() => {
+    if (user) {
+      setStudentName(user.name || '');
+      setStudentEmail(user.email || '');
+    }
+  }, [user]);
+
+  useEffect(() => {
+    const availableRooms = property?.rooms || property?.roomTypes || [];
+    if (initialRoomId) {
+      setSelectedRoomId(initialRoomId);
+    } else if (availableRooms.length > 0) {
+      setSelectedRoomId(availableRooms[0].id);
+    }
+  }, [property, initialRoomId]);
+
+  useEffect(() => {
+    if (initialDurationMonths) {
+      setDurationMonths(initialDurationMonths);
+    }
+  }, [initialDurationMonths]);
+
+  if (!isOpen || !property) return null;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
+    setSubmitting(true);
+    setStatusMsg(null);
+
     try {
       await submitBookingRequest({
+        studentId: user?.id,
         studentName,
         studentEmail,
         roomTypeId: selectedRoomId,
         moveInDate,
-        durationMonths,
-        message,
+        durationMonths: Number(durationMonths),
       });
-      setSubmitted(true);
-    } catch {
-      // Even in offline demo mode, show confirmation UX
-      setSubmitted(true);
+      setStatusMsg({
+        type: 'success',
+        text: 'Booking request submitted! Track it in My Bookings.',
+      });
+    } catch (error) {
+      setStatusMsg({
+        type: 'error',
+        text: error.message || 'Failed to submit booking.',
+      });
     } finally {
-      setLoading(false);
+      setSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-700 p-1 rounded-lg"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-lg font-bold text-slate-900">
+            Book {property.title}
+          </h3>
+          <button
+            onClick={onClose}
+            className="text-slate-400 hover:text-slate-600 text-2xl leading-none"
+          >
+            &times;
+          </button>
+        </div>
 
-        {submitted ? (
-          <div className="text-center py-8 space-y-3">
-            <CheckCircle2 className="w-14 h-14 text-emerald-500 mx-auto" />
-            <h3 className="text-xl font-extrabold text-slate-900">Booking Request Sent!</h3>
-            <p className="text-sm text-slate-600">
-              The landlord for <span className="font-semibold">{property.title}</span> has received your inquiry and will respond shortly.
-            </p>
-            <button
-              onClick={onClose}
-              className="mt-4 bg-brand-600 text-white font-semibold px-6 py-2.5 rounded-xl text-sm"
-            >
-              Back to Listings
-            </button>
+        {isLandlord ? (
+          <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-sm text-amber-800">
+            You are signed in with a <strong>Landlord</strong> account. Switch to a{' '}
+            <strong>Student</strong> account to book rooms.
           </div>
         ) : (
-          <>
-            <h3 className="text-lg font-extrabold text-slate-900">Book {property.title}</h3>
-            <p className="text-xs text-slate-500 mb-4">{property.address}, {property.city}</p>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!user && (
+              <div className="p-3 rounded-lg bg-blue-50 border border-blue-200 text-xs text-blue-800 flex justify-between items-center">
+                <span>Sign in as a student to track your booking status!</span>
+                <Link href="/login" className="font-bold underline">
+                  Sign In
+                </Link>
+              </div>
+            )}
 
-            <form onSubmit={handleSubmit} className="space-y-3.5 text-sm">
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                Select Room Type
+              </label>
+              <select
+                value={selectedRoomId}
+                onChange={(e) => setSelectedRoomId(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                required
+              >
+                {rooms.map((rt) => (
+                  <option key={rt.id} value={rt.id}>
+                    {rt.name} ({rt.category.replace('_', ' ')}) — ${rt.pricePerMonth}/mo
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                Student Name
+              </label>
+              <input
+                type="text"
+                required
+                value={studentName}
+                onChange={(e) => setStudentName(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                Student Email
+              </label>
+              <input
+                type="email"
+                required
+                value={studentEmail}
+                onChange={(e) => setStudentEmail(e.target.value)}
+                className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Select Room Type</label>
-                <select
-                  value={selectedRoomId}
-                  onChange={(e) => setSelectedRoomId(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-3 py-2.5 font-medium"
-                >
-                  {property.rooms?.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.name} — ${r.pricePerMonth}/month ({r.category})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Your Full Name</label>
-                  <input
-                    required
-                    type="text"
-                    placeholder="Samir Mohamed"
-                    value={studentName}
-                    onChange={(e) => setStudentName(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1">University Email</label>
-                  <input
-                    required
-                    type="email"
-                    placeholder="student@uni.edu.eg"
-                    value={studentEmail}
-                    onChange={(e) => setStudentEmail(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Move-In Date</label>
-                  <input
-                    required
-                    type="date"
-                    value={moveInDate}
-                    onChange={(e) => setMoveInDate(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Stay Duration (Months)</label>
-                  <input
-                    required
-                    type="number"
-                    min="1"
-                    max="24"
-                    value={durationMonths}
-                    onChange={(e) => setDurationMonths(e.target.value)}
-                    className="w-full border border-slate-300 rounded-xl px-3 py-2"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-500 mb-1">Note to Landlord (Optional)</label>
-                <textarea
-                  rows="2"
-                  placeholder="Hi, I am a 3rd year student looking for a quiet room..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="w-full border border-slate-300 rounded-xl px-3 py-2"
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                  Move-in Date
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={moveInDate}
+                  onChange={(e) => setMoveInDate(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 uppercase mb-1">
+                  Duration (Months)
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  max={24}
+                  required
+                  value={durationMonths}
+                  onChange={(e) => setDurationMonths(e.target.value)}
+                  className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                />
+              </div>
+            </div>
+
+            {statusMsg && (
+              <div
+                className={`p-3 rounded-lg text-sm ${
+                  statusMsg.type === 'success'
+                    ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    : 'bg-red-50 text-red-700 border border-red-200'
+                }`}
+              >
+                {statusMsg.text}
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-2">
+              <button
+                type="button"
+                onClick={onClose}
+                className="px-4 py-2 rounded-lg text-sm text-slate-600 hover:bg-slate-100"
+              >
+                Close
+              </button>
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full bg-brand-600 hover:bg-brand-700 text-white font-bold py-3 rounded-xl transition"
+                disabled={submitting || rooms.length === 0}
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
               >
-                {loading ? 'Submitting Request...' : 'Confirm Booking Request'}
+                {submitting ? 'Sending...' : 'Confirm Booking Request'}
               </button>
-            </form>
-          </>
+            </div>
+          </form>
         )}
       </div>
     </div>

@@ -1,82 +1,402 @@
 const prisma = require('../config/db');
 const { calculateDistanceKm, estimateCommute } = require('../utils/geo');
 
+const VALID_CATEGORIES = ['PRIVATE_ROOM', 'SHARED_ROOM', 'ENTIRE_PLACE'];
+
+const normalizeCategory = (category) => {
+  if (VALID_CATEGORIES.includes(category)) {
+    return category;
+  }
+  return 'PRIVATE_ROOM';
+};
+
 exports.searchByUniversity = async (req, res) => {
   try {
-    const { universityId, maxDistanceKm = 15, maxPrice, category } = req.query;
-    if (!universityId) return res.status(400).json({ error: 'Please provide a universityId' });
+    const {
+      universityId,
+      maxDistanceKm = 15,
+      maxPrice,
+      category,
+    } = req.query;
 
-    const university = await prisma.university.findUnique({ where: { id: universityId } });
-    if (!university) return res.status(404).json({ error: 'University not found' });
+    if (!universityId) {
+      return res.status(400).json({ error: 'universityId query parameter is required' });
+    }
+
+    const university = await prisma.university.findUnique({
+      where: { id: universityId },
+    });
+
+    if (!university) {
+      return res.status(404).json({ error: 'University not found' });
+    }
+
+    const roomFilter = { isAvailable: true };
+    if (maxPrice) roomFilter.pricePerMonth = { lte: parseFloat(maxPrice) };
+    if (category && VALID_CATEGORIES.includes(category)) {
+      roomFilter.category = category;
+    }
 
     const properties = await prisma.property.findMany({
       where: {
-        rooms: {
-          some: {
-            isAvailable: true,
-            ...(maxPrice && { pricePerMonth: { lte: parseFloat(maxPrice) } }),
-            ...(category && { category }),
-          },
+        city: {
+          equals: university.city,
+          mode: 'insensitive',
         },
+        rooms: { some: roomFilter },
       },
       include: {
-        rooms: { where: { isAvailable: true }, orderBy: { pricePerMonth: 'asc' } },
-        landlord: { select: { id: true, name: true, phone: true } },
+        rooms: {
+          where: roomFilter,
+          orderBy: { pricePerMonth: 'asc' },
+        },
       },
     });
 
     const results = properties
-      .map((property) => {
-        const distanceKm = calculateDistanceKm(university.latitude, university.longitude, property.latitude, property.longitude);
+      .map((prop) => {
+        const distanceToUniKm = calculateDistanceKm(
+          university.latitude,
+          university.longitude,
+          prop.latitude,
+          prop.longitude
+        );
+
+        const commute = estimateCommute(distanceToUniKm);
+        const startingPrice =
+          prop.rooms.length > 0 ? prop.rooms[0].pricePerMonth : null;
+
         return {
-          ...property,
-          distanceToUniKm: distanceKm,
-          commute: estimateCommute(distanceKm),
-          startingPrice: property.rooms.length > 0 ? property.rooms[0].pricePerMonth : null,
+          ...prop,
+          distanceToUniKm,
+          commute,
+          startingPrice,
         };
       })
-      .filter((item) => item.distanceToUniKm <= parseFloat(maxDistanceKm))
+      .filter((prop) => prop.distanceToUniKm <= parseFloat(maxDistanceKm))
       .sort((a, b) => a.distanceToUniKm - b.distanceToUniKm);
 
-    res.json({ university, totalFound: results.length, listings: results });
+    return res.json({
+      university,
+      count: results.length,
+      listings: results,
+    });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to search listings' });
+    console.error('SearchByUniversity Error:', error);
+    return res.status(500).json({ error: 'Failed to search listings' });
+  }
+};
+
+exports.getMyProperties = async (req, res) => {
+  try {
+    const properties = await prisma.property.findMany({
+      where: { landlordId: req.user.id },
+      include: {
+        rooms: {
+          orderBy: { pricePerMonth: 'asc' },
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return res.json(properties);
+  } catch (error) {
+    console.error('GetMyProperties Error:', error);
+    return res.status(500).json({ error: 'Failed to fetch your properties.' });
+  }
+};
+
+exports.getPropertyById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const property = await prisma.property.findUnique({
+      where: { id },
+      include: {
+        rooms: {
+          orderBy: { pricePerMonth: 'asc' },
+        },
+        landlord: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            phone: true,
+          },
+        },
+      },
+    });
+
+    if (!property) {
+      return res.status(404).json({ error: 'Property not found' });
+    }
+
+    const universities = await prisma.university.findMany({
+      where: {
+        city: {
+          equals: property.city,
+          mode: 'insensitive',
+        },
+      },
+    });
+
+    const nearbyUniversities = universities
+      .map((uni) => {
+        const distanceToUniKm = calculateDistanceKm(
+          uni.latitude,
+          uni.longitude,
+          property.latitude,
+          property.longitude
+        );
+        return {
+          ...uni,
+          distanceToUniKm,
+          commute: estimateCommute(distanceToUniKm),
+        };
+      })
+      .sort((a, b) => a.distanceToUniKm - b.distanceToUniKm);
+
+    const primaryUniversity = nearbyUniversities[0] || null;
+    const startingPrice =
+      property.rooms.length > 0 ? property.rooms[0].pricePerMonth : null;
+
+    return res.json({
+      ...property,
+      startingPrice,
+      distanceToUniKm: primaryUniversity ? primaryUniversity.distanceToUniKm : 1.2,
+      commute: primaryUniversity
+        ? primaryUniversity.commute
+        : { walkMins: 15, transitMins: 6 },
+      primaryUniversity,
+      nearbyUniversities,
+    });
+  } catch (error) {
+    console.error('GetPropertyById Error:', error);
+    return res.status(500).json({ error: 'Failed to fetch property details' });
   }
 };
 
 exports.createProperty = async (req, res) => {
   try {
-    const { title, description, address, city, latitude, longitude, amenities, images, landlordId, rooms } = req.body;
-    let ownerId = landlordId;
-    if (!ownerId) {
-      const firstLandlord = await prisma.user.findFirst({ where: { role: 'LANDLORD' } });
-      ownerId = firstLandlord?.id;
+    const {
+      title,
+      description,
+      address,
+      city,
+      latitude,
+      longitude,
+      amenities = [],
+      images = [],
+      landlordId,
+      rooms = [],
+    } = req.body;
+
+    if (!title || !address || !city) {
+      return res.status(400).json({ error: 'Title, address, and city are required.' });
     }
 
-    const newProperty = await prisma.property.create({
+    let candidateId = req.user?.id || landlordId;
+    let landlordUser = null;
+
+    if (candidateId) {
+      landlordUser = await prisma.user.findUnique({
+        where: { id: candidateId },
+      });
+    }
+
+    if (!landlordUser && req.user?.email) {
+      landlordUser = await prisma.user.findUnique({
+        where: { email: req.user.email },
+      });
+    }
+
+    if (!landlordUser) {
+      landlordUser = await prisma.user.findFirst({
+        where: { role: 'LANDLORD' },
+      });
+    }
+
+    if (!landlordUser) {
+      return res.status(400).json({ error: 'No valid landlord account found in database.' });
+    }
+
+    const property = await prisma.property.create({
       data: {
-        title, description, address, city,
-        latitude: parseFloat(latitude),
-        longitude: parseFloat(longitude),
-        amenities: amenities || [],
-        images: images || [],
-        landlordId: ownerId,
+        title: title.trim(),
+        description: description || `Modern student accommodation in ${city}`,
+        address: address.trim(),
+        city: city.trim(),
+        latitude: parseFloat(latitude) || 51.5246,
+        longitude: parseFloat(longitude) || -0.134,
+        amenities: Array.isArray(amenities) ? amenities : [],
+        images: Array.isArray(images) ? images : [],
+        landlordId: landlordUser.id,
         rooms: {
-          create: (rooms || []).map((r) => ({
-            name: r.name,
-            category: r.category || 'PRIVATE_ROOM',
-            pricePerMonth: parseFloat(r.pricePerMonth),
+          create: rooms.map((r) => ({
+            name: r.name || 'Standard Student Room',
+            category: normalizeCategory(r.category),
+            pricePerMonth: parseFloat(r.pricePerMonth) || 800,
             currency: r.currency || 'USD',
             sizeSqm: r.sizeSqm ? parseFloat(r.sizeSqm) : 18,
-            availableFrom: new Date(r.availableFrom || '2026-09-01'),
+            availableFrom: r.availableFrom
+              ? new Date(r.availableFrom)
+              : new Date(),
           })),
         },
       },
       include: { rooms: true },
     });
-    res.status(201).json(newProperty);
+
+    return res.status(201).json(property);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: 'Failed to create property listing' });
+    console.error('CreateProperty Error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to create property.',
+    });
+  }
+};
+
+exports.updateProperty = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      title,
+      description,
+      address,
+      city,
+      latitude,
+      longitude,
+      amenities,
+      images,
+      rooms = [],
+    } = req.body;
+
+    const existingProperty = await prisma.property.findUnique({
+      where: { id },
+      include: { rooms: { orderBy: { pricePerMonth: 'asc' } } },
+    });
+
+    if (!existingProperty) {
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+
+    if (existingProperty.landlordId !== req.user.id) {
+      return res.status(403).json({
+        error: 'Access denied. You can only edit your own properties.',
+      });
+    }
+
+    const updatedProperty = await prisma.property.update({
+      where: { id },
+      data: {
+        title: title ? title.trim() : existingProperty.title,
+        description:
+          description !== undefined ? description : existingProperty.description,
+        address: address ? address.trim() : existingProperty.address,
+        city: city ? city.trim() : existingProperty.city,
+        latitude:
+          latitude !== undefined
+            ? parseFloat(latitude)
+            : existingProperty.latitude,
+        longitude:
+          longitude !== undefined
+            ? parseFloat(longitude)
+            : existingProperty.longitude,
+        amenities: Array.isArray(amenities)
+          ? amenities
+          : existingProperty.amenities,
+        images: Array.isArray(images) ? images : existingProperty.images,
+      },
+    });
+
+    // Update the primary room tier if room data was provided
+    if (Array.isArray(rooms) && rooms.length > 0) {
+      const r = rooms[0];
+      if (existingProperty.rooms.length > 0) {
+        await prisma.roomType.update({
+          where: { id: existingProperty.rooms[0].id },
+          data: {
+            name: r.name || existingProperty.rooms[0].name,
+            category: normalizeCategory(r.category),
+            pricePerMonth:
+              r.pricePerMonth !== undefined
+                ? parseFloat(r.pricePerMonth)
+                : existingProperty.rooms[0].pricePerMonth,
+            sizeSqm:
+              r.sizeSqm !== undefined
+                ? parseFloat(r.sizeSqm)
+                : existingProperty.rooms[0].sizeSqm,
+          },
+        });
+      } else {
+        await prisma.roomType.create({
+          data: {
+            propertyId: id,
+            name: r.name || 'Standard Student Room',
+            category: normalizeCategory(r.category),
+            pricePerMonth: parseFloat(r.pricePerMonth) || 800,
+            currency: r.currency || 'USD',
+            sizeSqm: r.sizeSqm ? parseFloat(r.sizeSqm) : 18,
+            availableFrom: new Date(),
+          },
+        });
+      }
+    }
+
+    const refreshed = await prisma.property.findUnique({
+      where: { id: updatedProperty.id },
+      include: { rooms: { orderBy: { pricePerMonth: 'asc' } } },
+    });
+
+    return res.json(refreshed);
+  } catch (error) {
+    console.error('UpdateProperty Error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to update property.',
+    });
+  }
+};
+
+exports.deleteProperty = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existingProperty = await prisma.property.findUnique({
+      where: { id },
+    });
+
+    if (!existingProperty) {
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+
+    if (existingProperty.landlordId !== req.user.id) {
+      return res.status(403).json({
+        error: 'Access denied. You can only delete your own properties.',
+      });
+    }
+
+    // Delete related bookings and rooms first so foreign key constraints succeed
+    await prisma.$transaction([
+      prisma.booking.deleteMany({
+        where: {
+          roomType: {
+            propertyId: id,
+          },
+        },
+      }),
+      prisma.roomType.deleteMany({
+        where: { propertyId: id },
+      }),
+      prisma.property.delete({
+        where: { id },
+      }),
+    ]);
+
+    return res.json({ message: 'Property deleted successfully.', id });
+  } catch (error) {
+    console.error('DeleteProperty Error:', error);
+    return res.status(500).json({
+      error: error.message || 'Failed to delete property.',
+    });
   }
 };
