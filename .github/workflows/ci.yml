@@ -9,19 +9,30 @@ on:
 jobs:
   build-check:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - name: Setup Node.js
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
+
       - name: Install & Validate Backend
         working-directory: ./backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/unihousing?schema=public' }}
+          DIRECT_URL: ${{ secrets.DIRECT_URL || 'postgresql://postgres:postgres@localhost:5432/unihousing?schema=public' }}
         run: |
           npm install
           npx prisma validate
+          npx prisma generate
+
       - name: Install & Build Web Frontend
         working-directory: ./frontend-web
+        env:
+          NEXT_PUBLIC_API_URL: ${{ secrets.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api' }}
         run: |
           npm install
           npm run build
