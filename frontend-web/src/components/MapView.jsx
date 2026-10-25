@@ -12,13 +12,39 @@ import {
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-function MapUpdater({ center }) {
+function MapUpdater({ lat, lng }) {
+  const map = useMap();
+  // نعتمد على الرقمين (lat, lng) وليس على مصفوفة جديدة كل مرة،
+  // حتى لا تتحرك الخريطة من جديد كلما مرّرت الماوس على عقار
+  useEffect(() => {
+    if (!lat || !lng) return;
+    try {
+      const size = map.getSize();
+      if (size.x === 0 || size.y === 0) {
+        // الخريطة مخفية (شاشة صغيرة): ننقلها بدون حركة حتى لا يحدث خطأ
+        map.setView([lat, lng], 14, { animate: false });
+      } else {
+        map.flyTo([lat, lng], 14, { duration: 1.2 });
+      }
+    } catch (e) {
+      // لا نريد أن يتعطل الموقع كله بسبب الخريطة
+    }
+  }, [lat, lng, map]);
+  return null;
+}
+
+// يعيد حساب حجم الخريطة عندما يتغير حجمها (مثلًا عند إظهارها بعد أن كانت مخفية على الموبايل)
+function MapResizer() {
   const map = useMap();
   useEffect(() => {
-    if (center && center[0] && center[1]) {
-      map.flyTo(center, 14, { duration: 1.2 });
-    }
-  }, [center, map]);
+    if (typeof ResizeObserver === 'undefined') return;
+    const el = map.getContainer();
+    const observer = new ResizeObserver(() => {
+      if (el.clientWidth > 0 && el.clientHeight > 0) map.invalidateSize();
+    });
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [map]);
   return null;
 }
 
@@ -62,7 +88,8 @@ export default function MapView({
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
 
-      <MapUpdater center={center} />
+      <MapUpdater lat={center[0]} lng={center[1]} />
+      <MapResizer />
 
       {/* University Campus Marker with Full University Name */}
       {university && (

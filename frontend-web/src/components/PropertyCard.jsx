@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { useSettings } from '../context/SettingsContext';
 
 export default function PropertyCard({
   property,
@@ -11,6 +12,8 @@ export default function PropertyCard({
   onLeave,
   onBook,
 }) {
+  const { t } = useSettings();
+
   const coverImage =
     property.images?.[0] ||
     'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80';
@@ -26,11 +29,11 @@ export default function PropertyCard({
       }}
       className={`bg-white rounded-2xl border transition-all duration-200 overflow-hidden flex flex-col sm:flex-row ${
         isHovered
-          ? 'border-blue-500 shadow-lg ring-2 ring-blue-500/20'
+          ? 'border-brand-500 shadow-lg ring-2 ring-brand-500/20'
           : 'border-slate-200 shadow-sm hover:shadow-md'
       }`}
     >
-      {/* Thumbnail Image linking to Details Page */}
+      {/* صورة العقار — تفتح صفحة التفاصيل */}
       <Link
         href={`/properties/${property.id}`}
         className="sm:w-56 h-48 sm:h-auto relative shrink-0 block group overflow-hidden"
@@ -41,20 +44,20 @@ export default function PropertyCard({
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
         {property.distanceToUniKm !== undefined && (
-          <span className="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full">
-            {property.distanceToUniKm} km from campus
+          <span className="absolute top-3 start-3 bg-slate-900/80 backdrop-blur-sm text-white text-xs font-semibold px-2.5 py-1 rounded-full">
+            {t('card.distance', { km: property.distanceToUniKm })}
           </span>
         )}
       </Link>
 
-      {/* Card Content */}
+      {/* محتوى البطاقة */}
       <div className="p-5 flex-1 flex flex-col justify-between">
         <div>
           <div className="flex items-start justify-between gap-2">
             <div>
               <Link
                 href={`/properties/${property.id}`}
-                className="text-lg font-bold text-slate-900 hover:text-blue-600 transition"
+                className="text-lg font-bold text-slate-900 hover:text-brand-600 transition"
               >
                 {property.title}
               </Link>
@@ -64,40 +67,40 @@ export default function PropertyCard({
             </div>
 
             {property.startingPrice && (
-              <div className="text-right shrink-0">
-                <span className="text-xs text-slate-400 block">From</span>
-                <span className="text-lg font-extrabold text-blue-600">
+              <div className="text-end shrink-0">
+                <span className="text-xs text-slate-400 block">{t('card.from')}</span>
+                <span className="text-lg font-extrabold text-brand-600">
                   ${property.startingPrice}
                 </span>
-                <span className="text-xs text-slate-500">/mo</span>
+                <span className="text-xs text-slate-500"> {t('card.perMonth')}</span>
               </div>
             )}
           </div>
 
-          {/* Commute Badges */}
+          {/* مدة الوصول للجامعة */}
           {property.commute && (
             <div className="flex flex-wrap items-center gap-3 mt-3 text-xs text-slate-600">
               <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">
-                🚶 {property.commute.walkMins} min walk
+                🚶 {t('card.walk', { n: property.commute.walkMins })}
               </span>
               <span className="bg-slate-100 px-2.5 py-1 rounded-md font-medium">
-                🚇 {property.commute.transitMins} min transit
+                🚇 {t('card.transit', { n: property.commute.transitMins })}
               </span>
               {universityName && (
                 <span className="text-slate-400 truncate">
-                  to {universityName}
+                  {t('card.toUni', { name: universityName })}
                 </span>
               )}
             </div>
           )}
 
-          {/* Amenities Preview */}
+          {/* المميزات */}
           {property.amenities?.length > 0 && (
             <div className="flex flex-wrap gap-1.5 mt-3">
               {property.amenities.slice(0, 4).map((amenity, idx) => (
                 <span
                   key={idx}
-                  className="text-[11px] bg-blue-50 text-blue-700 px-2 py-0.5 rounded font-medium"
+                  className="text-[11px] bg-brand-50 text-brand-700 px-2 py-0.5 rounded font-medium"
                 >
                   {amenity}
                 </span>
@@ -106,11 +109,10 @@ export default function PropertyCard({
           )}
         </div>
 
-        {/* Footer Actions */}
+        {/* الأزرار */}
         <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between gap-3">
           <div className="text-xs text-slate-500">
-            <span className="font-semibold text-slate-700">{rooms.length}</span>{' '}
-            {rooms.length === 1 ? 'room tier' : 'room tiers'} available
+            {t('card.roomTiers', { n: rooms.length })}
           </div>
 
           <div className="flex items-center gap-2">
@@ -118,15 +120,15 @@ export default function PropertyCard({
               href={`/properties/${property.id}`}
               className="border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg transition"
             >
-              View Details
+              {t('card.viewDetails')}
             </Link>
             {onBook && (
               <button
                 type="button"
                 onClick={() => onBook(property)}
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow-sm"
+                className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow-sm"
               >
-                Book Room
+                {t('card.book')}
               </button>
             )}
           </div>
