@@ -17,11 +17,10 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import MapView, { Marker, Callout } from 'react-native-maps';
 
-// Automatically resolve localhost for Android Emulator (10.0.2.2) vs iOS/Web (localhost)
 const DEFAULT_HOST =
   Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || `${DEFAULT_HOST}/api`;
+  process.env.EXPO_PUBLIC_API_URL || `https://uni-housing-backend.vercel.app/api`;
 
 const DEFAULT_COVER_IMAGE =
   'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80';
@@ -41,19 +40,268 @@ const AMENITY_OPTIONS = [
   'Cleaning Service',
 ];
 
-const CATEGORY_LABELS = {
-  ALL: 'All Tiers',
-  PRIVATE_ROOM: 'Private Room',
-  ENTIRE_PLACE: 'Studio / Entire Place',
-  SHARED_ROOM: 'Shared Room',
+const TRANSLATIONS = {
+  en: {
+    brand: 'UniHousing',
+    signInJoin: 'Sign In',
+    logOut: 'Log Out',
+    selectCampus: 'SELECT UNIVERSITY CAMPUS',
+    addCampus: '+ Add Campus',
+    maxDist: 'Max Dist (km)',
+    maxPrice: 'Max Price ($)',
+    any: 'Any',
+    allRoomTypes: 'All Room Types',
+    privateRoom: 'Private Room',
+    entirePlace: 'Studio / Entire Place',
+    sharedRoom: 'Shared Room',
+    searchingProps: 'Searching accommodations...',
+    propsNear: 'Student Properties Near',
+    kmFromCampus: 'km from campus',
+    perMonth: '/ month',
+    walk: 'm walk',
+    transit: 'm transit',
+    viewDetails: 'View Details & Rooms',
+    bookRoom: 'Book Room',
+    tapToBook: 'Tap to Book Room →',
+    backToMap: '← Back to University Map',
+    aboutResidence: 'About This Residence',
+    includedAmenities: 'INCLUDED AMENITIES & FACILITIES',
+    availableRooms: 'Available Room Tiers',
+    allTiers: 'All Tiers',
+    book: 'Book',
+    leaseCalculator: 'Total Lease Cost Calculator',
+    selectedRoom: 'Selected Room',
+    leaseDuration: 'LEASE DURATION',
+    months: 'MONTHS',
+    mos: 'mos',
+    monthlyRent: 'Monthly Rent',
+    leaseSubtotal: 'Lease Subtotal',
+    securityDeposit: 'Refundable Security Deposit (50%)',
+    totalLease: 'Total Estimated Lease',
+    bookThisRoom: 'Book This Room',
+    neighborhoodMap: 'Neighborhood & Campus Map',
+    myBookings: 'My Booking Requests',
+    refresh: 'Refresh',
+    noStudentBookings: "You haven't submitted any room booking requests yet.",
+    moveIn: 'Move-in',
+    editProperty: '✏️ Edit Student Property',
+    publishProperty: '🏢 Publish New Property',
+    cancelEdit: 'Cancel Edit',
+    propTitle: 'Property Title',
+    streetAddress: 'Street Address',
+    city: 'City',
+    description: 'Description',
+    searchStreetLabel: 'SEARCH STREET & PINPOINT LOCATION ON MAP',
+    searchStreetPlaceholder: '🔍 Search street (e.g., Gower Street, London)...',
+    searchingStreets: 'Searching streets...',
+    tapMapHint: '👆 Tap anywhere on the map or drag pin',
+    amenitiesLabel: 'AMENITIES & FACILITIES',
+    selected: 'SELECTED',
+    addCustomFacility: 'Add custom facility...',
+    add: '+ Add',
+    propertyPhotos: 'PROPERTY PHOTOS',
+    pickFromGallery: '📷 Pick Photos from Phone Gallery',
+    pasteImageUrl: 'Or paste image URL (https://...)',
+    addUrl: 'Add URL',
+    cover: 'Cover',
+    setCover: 'Set Cover',
+    primaryRoomDetails: 'PRIMARY ROOM TIER DETAILS',
+    roomTierName: 'Room Tier Name',
+    pricePerMo: 'Price / Month ($)',
+    sizeSqm: 'Size (m²)',
+    saving: 'Saving...',
+    saveChanges: 'Save Property Changes',
+    publishListing: 'Publish Property Listing',
+    myListedProps: 'My Listed Properties',
+    noListedProps: 'No properties published yet.',
+    amenitiesCount: 'amenities',
+    edit: 'Edit',
+    delete: 'Delete',
+    incomingBookings: 'Incoming Student Bookings',
+    student: 'Student',
+    status: 'Status',
+    approve: 'Approve',
+    reject: 'Reject',
+    welcomeBack: 'Welcome Back',
+    createAccount: 'Create an Account',
+    iAmStudent: '🎓 I am a Student',
+    iAmLandlord: '🏢 I am a Landlord',
+    fullName: 'Full Name',
+    phone: 'Phone Number',
+    email: 'Email Address',
+    password: 'Password',
+    pleaseWait: 'Please wait...',
+    signIn: 'Sign In',
+    signUpAs: 'Sign Up as',
+    fillStudentDemo: 'Fill Student Demo',
+    fillLandlordDemo: 'Fill Landlord Demo',
+    noAccountPrompt: "Don't have an account? Create one",
+    hasAccountPrompt: 'Already have an account? Sign In',
+    tabExplore: '🗺️ Explore',
+    tabBookings: '📋 My Bookings',
+    tabLandlord: '🏢 Landlord Portal',
+    tabAccount: '🔑 Account',
+    cancel: 'Cancel',
+    confirmBooking: 'Confirm Booking',
+    sending: 'Sending...',
+    addUniTitle: '🎓 Add University Campus',
+    autoFillUni: '🔍 Auto-fill: Search university name...',
+    uniName: 'University Name',
+    country: 'Country',
+    latitude: 'Latitude',
+    longitude: 'Longitude',
+    saveUni: 'Save University',
+  },
+  ar: {
+    brand: 'يوني هاوسينج',
+    signInJoin: 'تسجيل الدخول',
+    logOut: 'خروج',
+    selectCampus: 'اختر الحرم الجامعي',
+    addCampus: '+ إضافة جامعة',
+    maxDist: 'أقصى مسافة (كم)',
+    maxPrice: 'أقصى سعر ($)',
+    any: 'الكل',
+    allRoomTypes: 'جميع الغرف',
+    privateRoom: 'غرفة خاصة',
+    entirePlace: 'استوديو / شقة كاملة',
+    sharedRoom: 'غرفة مشتركة',
+    searchingProps: 'جاري البحث عن سكن طلابي...',
+    propsNear: 'سكن طلابي بالقرب من',
+    kmFromCampus: 'كم عن الجامعة',
+    perMonth: '/ شهرياً',
+    walk: 'د مشي',
+    transit: 'د مواصلات',
+    viewDetails: 'عرض التفاصيل والغرف',
+    bookRoom: 'حجز غرفة',
+    tapToBook: 'اضغط لحجز الغرفة ←',
+    backToMap: '→ العودة لخريطة الجامعة',
+    aboutResidence: 'عن هذا السكن',
+    includedAmenities: 'المرافق والخدمات المشمولة',
+    availableRooms: 'فئات الغرف المتاحة',
+    allTiers: 'كل الفئات',
+    book: 'إحجز',
+    leaseCalculator: 'حاسبة تكلفة الإيجار الإجمالية',
+    selectedRoom: 'الغرفة المختارة',
+    leaseDuration: 'مدة الإيجار',
+    months: 'أشهر',
+    mos: 'شهور',
+    monthlyRent: 'الإيجار الشهري',
+    leaseSubtotal: 'إجمالي الإيجار',
+    securityDeposit: 'تأمين مسترد (50%)',
+    totalLease: 'إجمالي التكلفة التقديرية',
+    bookThisRoom: 'احجز هذه الغرفة',
+    neighborhoodMap: 'خريطة الحي والجامعة',
+    myBookings: 'طلبات الحجز الخاصة بي',
+    refresh: 'تحديث',
+    noStudentBookings: 'لم تقم بإرسال أي طلبات حجز حتى الآن.',
+    moveIn: 'تاريخ السكن',
+    editProperty: '✏️ تعديل بيانات السكن',
+    publishProperty: '🏢 نشر سكن طلابي جديد',
+    cancelEdit: 'إلغاء التعديل',
+    propTitle: 'اسم السكن / العقار',
+    streetAddress: 'عنوان الشارع',
+    city: 'المدينة',
+    description: 'الوصف',
+    searchStreetLabel: 'ابحث عن الشارع وحدد الموقع على الخريطة',
+    searchStreetPlaceholder: '🔍 ابحث عن شارع (مثال: شارع التحرير، القاهرة)...',
+    searchingStreets: 'جاري البحث عن الشوارع...',
+    tapMapHint: '👆 اضغط على الخريطة أو اسحب الدبوس لتحديد الموقع',
+    amenitiesLabel: 'المرافق والخدمات',
+    selected: 'محددة',
+    addCustomFacility: 'إضافة مرفق آخر...',
+    add: '+ إضافة',
+    propertyPhotos: 'صور السكن',
+    pickFromGallery: '📷 اختر صوراً من معرض الهاتف',
+    pasteImageUrl: 'أو الصق رابط الصورة (https://...)',
+    addUrl: 'إضافة رابط',
+    cover: 'غلاف',
+    setCover: 'تعيين كغلاف',
+    primaryRoomDetails: 'تفاصيل فئة الغرفة الأساسية',
+    roomTierName: 'اسم فئة الغرفة',
+    pricePerMo: 'السعر / شهرياً ($)',
+    sizeSqm: 'المساحة (م²)',
+    saving: 'جاري الحفظ...',
+    saveChanges: 'حفظ التعديلات',
+    publishListing: 'نشر إعلان السكن',
+    myListedProps: 'عقاراتي المنشورة',
+    noListedProps: 'لم تقم بنشر أي عقارات بعد.',
+    amenitiesCount: 'مرافق',
+    edit: 'تعديل',
+    delete: 'حذف',
+    incomingBookings: 'طلبات حجز الطلاب الواردة',
+    student: 'الطالب',
+    status: 'الحالة',
+    approve: 'قبول',
+    reject: 'رفض',
+    welcomeBack: 'مرحباً بعودتك',
+    createAccount: 'إنشاء حساب جديد',
+    iAmStudent: '🎓 أنا طالب',
+    iAmLandlord: '🏢 أنا مالك عقار',
+    fullName: 'الاسم الكامل',
+    phone: 'رقم الهاتف',
+    email: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    pleaseWait: 'يرجى الانتظار...',
+    signIn: 'تسجيل الدخول',
+    signUpAs: 'إنشاء حساب',
+    fillStudentDemo: 'حساب طالب تجريبي',
+    fillLandlordDemo: 'حساب مالك تجريبي',
+    noAccountPrompt: 'ليس لديك حساب؟ أنشئ حساباً',
+    hasAccountPrompt: 'لديك حساب بالفعل؟ سجل الدخول',
+    tabExplore: '🗺️ استكشاف',
+    tabBookings: '📋 حجوزاتي',
+    tabLandlord: '🏢 لوحة المالك',
+    tabAccount: '🔑 الحساب',
+    cancel: 'إلغاء',
+    confirmBooking: 'تأكيد الحجز',
+    sending: 'جاري الإرسال...',
+    addUniTitle: '🎓 إضافة حرم جامعي جديد',
+    autoFillUni: '🔍 تعبئة تلقائية: ابحث عن اسم الجامعة...',
+    uniName: 'اسم الجامعة',
+    country: 'الدولة',
+    latitude: 'خط العرض (Latitude)',
+    longitude: 'خط الطول (Longitude)',
+    saveUni: 'حفظ الجامعة',
+  },
 };
 
 export default function App() {
+  // --- THEME & LANGUAGE STATE ---
+  const [darkMode, setDarkMode] = useState(false);
+  const [lang, setLang] = useState('en'); // 'en' | 'ar'
+  const t = TRANSLATIONS[lang];
+  const isRTL = lang === 'ar';
+
+  const theme = useMemo(
+    () => ({
+      bg: darkMode ? '#0f172a' : '#f8fafc',
+      card: darkMode ? '#1e293b' : '#ffffff',
+      inputBg: darkMode ? '#0f172a' : '#ffffff',
+      subtleBg: darkMode ? '#334155' : '#f1f5f9',
+      text: darkMode ? '#f8fafc' : '#0f172a',
+      subText: darkMode ? '#94a3b8' : '#64748b',
+      bodyText: darkMode ? '#cbd5e1' : '#475569',
+      border: darkMode ? '#334155' : '#e2e8f0',
+      inputBorder: darkMode ? '#475569' : '#cbd5e1',
+    }),
+    [darkMode]
+  );
+
+  const categoryLabels = useMemo(
+    () => ({
+      ALL: t.allTiers,
+      PRIVATE_ROOM: t.privateRoom,
+      ENTIRE_PLACE: t.entirePlace,
+      SHARED_ROOM: t.sharedRoom,
+    }),
+    [t]
+  );
+
   // --- AUTH STATE ---
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
-  const [activeTab, setActiveTab] = useState('EXPLORE'); // 'EXPLORE' | 'DETAILS' | 'STUDENT' | 'LANDLORD' | 'AUTH'
-  const [authMode, setAuthMode] = useState('LOGIN'); // 'LOGIN' | 'REGISTER'
+  const [activeTab, setActiveTab] = useState('EXPLORE');
+  const [authMode, setAuthMode] = useState('LOGIN');
 
   // Auth Form State
   const [authName, setAuthName] = useState('');
@@ -95,7 +343,7 @@ export default function App() {
   // --- STUDENT DASHBOARD STATE ---
   const [studentBookings, setStudentBookings] = useState([]);
 
-  // --- LANDLORD PORTAL STATE ---
+  // --- LANDLORD PORTAL STATE (Single Room Tier) ---
   const [landlordBookings, setLandlordBookings] = useState([]);
   const [myProperties, setMyProperties] = useState([]);
   const [editingPropertyId, setEditingPropertyId] = useState(null);
@@ -138,7 +386,6 @@ export default function App() {
     return headers;
   };
 
-  // --- INITIAL DATA FETCH ---
   const loadUniversities = async () => {
     try {
       const res = await fetch(`${API_BASE_URL}/universities`);
@@ -163,7 +410,9 @@ export default function App() {
       if (maxPrice) params.append('maxPrice', maxPrice);
       if (categoryFilter) params.append('category', categoryFilter);
 
-      const res = await fetch(`${API_BASE_URL}/listings/search?${params.toString()}`);
+      const res = await fetch(
+        `${API_BASE_URL}/listings/search?${params.toString()}`
+      );
       const data = await res.json();
       setListings(data.listings || []);
     } catch (err) {
@@ -194,7 +443,6 @@ export default function App() {
     }
   }, [selectedUni, maxDistanceKm, maxPrice, categoryFilter]);
 
-  // Pre-fill student info in booking modal when logged in
   useEffect(() => {
     if (user) {
       setStudentName(user.name || '');
@@ -202,7 +450,6 @@ export default function App() {
     }
   }, [user]);
 
-  // Debounced Street Geocoding Search for Landlord Map Picker
   useEffect(() => {
     const trimmed = streetQuery.trim();
     if (trimmed.length < 3) {
@@ -215,7 +462,9 @@ export default function App() {
         const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&q=${encodeURIComponent(
           trimmed
         )}`;
-        const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        const res = await fetch(url, {
+          headers: { 'Accept-Language': lang },
+        });
         if (res.ok) {
           const data = await res.json();
           setStreetResults(data || []);
@@ -227,9 +476,8 @@ export default function App() {
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [streetQuery]);
+  }, [streetQuery, lang]);
 
-  // Debounced University Search in Add University Modal
   useEffect(() => {
     const trimmed = uniSearchQuery.trim();
     if (trimmed.length < 3) {
@@ -241,7 +489,9 @@ export default function App() {
         const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=4&q=${encodeURIComponent(
           trimmed
         )}`;
-        const res = await fetch(url, { headers: { 'Accept-Language': 'en' } });
+        const res = await fetch(url, {
+          headers: { 'Accept-Language': lang },
+        });
         if (res.ok) {
           const data = await res.json();
           setUniSearchResults(data || []);
@@ -251,9 +501,8 @@ export default function App() {
       }
     }, 400);
     return () => clearTimeout(timer);
-  }, [uniSearchQuery]);
+  }, [uniSearchQuery, lang]);
 
-  // --- AUTH HANDLERS ---
   const handleAuthSubmit = async () => {
     setAuthError('');
     setAuthLoading(true);
@@ -300,7 +549,6 @@ export default function App() {
     setActiveTab('EXPLORE');
   };
 
-  // --- DEDICATED PROPERTY DETAILS HANDLER ---
   const openPropertyDetails = async (propertySummary) => {
     setSelectedProperty(propertySummary);
     setActivePhotoIdx(0);
@@ -370,7 +618,6 @@ export default function App() {
     }
   };
 
-  // --- STUDENT & LANDLORD DATA LOADERS ---
   const loadStudentBookings = async (overrideToken = token) => {
     if (!overrideToken) return;
     try {
@@ -411,7 +658,6 @@ export default function App() {
     }
   };
 
-  // --- LANDLORD PORTAL ACTIONS ---
   const handleSelectStreet = (place) => {
     const lat = Number(parseFloat(place.lat).toFixed(6));
     const lng = Number(parseFloat(place.lon).toFixed(6));
@@ -589,9 +835,9 @@ export default function App() {
       'Delete Property',
       `Are you sure you want to delete "${prop.title}"?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t.cancel, style: 'cancel' },
         {
-          text: 'Delete',
+          text: t.delete,
           style: 'destructive',
           onPress: async () => {
             try {
@@ -658,7 +904,6 @@ export default function App() {
     }
   };
 
-  // --- LEASE COST CALCULATOR COMPUTATIONS ---
   const detailsRooms = selectedProperty?.rooms || [];
   const filteredDetailsRooms =
     detailsRoomCategory === 'ALL'
@@ -669,7 +914,8 @@ export default function App() {
   const calcMonthlyRent = selectedCalcRoom
     ? Number(selectedCalcRoom.pricePerMonth)
     : 0;
-  const calcDeposit = calcMonthlyRent > 0 ? Math.round(calcMonthlyRent * 0.5) : 0;
+  const calcDeposit =
+    calcMonthlyRent > 0 ? Math.round(calcMonthlyRent * 0.5) : 0;
   const calcSubtotal = calcMonthlyRent * calcMonths;
   const calcGrandTotal = calcSubtotal + calcDeposit;
 
@@ -678,25 +924,68 @@ export default function App() {
     [selectedAmenities]
   );
 
-  return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar style="dark" />
+  const rowDir = { flexDirection: isRTL ? 'row-reverse' : 'row' };
+  const textAlign = { textAlign: isRTL ? 'right' : 'left' };
 
-      {/* TOP NAVBAR */}
-      <View style={styles.navbar}>
+  return (
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.bg }]}>
+      <StatusBar style={darkMode ? 'light' : 'dark'} />
+
+      {/* TOP NAVBAR WITH LANGUAGE & DARK MODE TOGGLES */}
+      <View
+        style={[
+          styles.navbar,
+          rowDir,
+          { backgroundColor: theme.card, borderBottomColor: theme.border },
+        ]}
+      >
         <TouchableOpacity
-          style={styles.brandRow}
+          style={[styles.brandRow, rowDir]}
           onPress={() => setActiveTab('EXPLORE')}
         >
           <View style={styles.brandBadge}>
             <Text style={styles.brandBadgeText}>U</Text>
           </View>
-          <Text style={styles.brandTitle}>UniHousing</Text>
+          <Text style={[styles.brandTitle, { color: theme.text }]}>
+            {t.brand}
+          </Text>
         </TouchableOpacity>
 
-        <View style={styles.navRight}>
+        <View style={[styles.navRight, rowDir]}>
+          {/* Language Switcher Button (EN / عربي) */}
+          <TouchableOpacity
+            onPress={() => setLang((prev) => (prev === 'en' ? 'ar' : 'en'))}
+            style={[
+              styles.toggleBtn,
+              {
+                backgroundColor: theme.subtleBg,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <Text style={[styles.toggleBtnText, { color: theme.text }]}>
+              {lang === 'en' ? 'عربي' : 'EN'}
+            </Text>
+          </TouchableOpacity>
+
+          {/* Dark Mode Toggle Button (🌙 / ☀️) */}
+          <TouchableOpacity
+            onPress={() => setDarkMode((prev) => !prev)}
+            style={[
+              styles.toggleBtn,
+              {
+                backgroundColor: theme.subtleBg,
+                borderColor: theme.border,
+              },
+            ]}
+          >
+            <Text style={styles.toggleBtnEmoji}>
+              {darkMode ? '☀️' : '🌙'}
+            </Text>
+          </TouchableOpacity>
+
           {user ? (
-            <View style={styles.userRow}>
+            <View style={[styles.userRow, rowDir]}>
               <View
                 style={[
                   styles.rolePill,
@@ -706,11 +995,11 @@ export default function App() {
                 ]}
               >
                 <Text style={styles.rolePillText}>
-                  {user.name.split(' ')[0]} • {user.role}
+                  {user.name.split(' ')[0]}
                 </Text>
               </View>
               <TouchableOpacity onPress={handleLogout}>
-                <Text style={styles.logoutText}>Log Out</Text>
+                <Text style={styles.logoutText}>{t.logOut}</Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -721,7 +1010,7 @@ export default function App() {
                 setActiveTab('AUTH');
               }}
             >
-              <Text style={styles.loginBtnText}>Sign In / Join</Text>
+              <Text style={styles.loginBtnText}>{t.signInJoin}</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -730,12 +1019,13 @@ export default function App() {
       {/* SCREEN 1: EXPLORE MAP & LISTINGS */}
       {activeTab === 'EXPLORE' && (
         <ScrollView style={styles.flex1}>
-          {/* University Selector Bar */}
           <View style={styles.sectionPad}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.sectionLabel}>SELECT UNIVERSITY CAMPUS</Text>
+            <View style={[styles.rowBetween, rowDir]}>
+              <Text style={[styles.sectionLabel, { color: theme.subText }]}>
+                {t.selectCampus}
+              </Text>
               <TouchableOpacity onPress={() => setUniModalOpen(true)}>
-                <Text style={styles.linkText}>+ Add Campus</Text>
+                <Text style={styles.linkText}>{t.addCampus}</Text>
               </TouchableOpacity>
             </View>
 
@@ -750,11 +1040,19 @@ export default function App() {
                   <TouchableOpacity
                     key={uni.id}
                     onPress={() => setSelectedUni(uni)}
-                    style={[styles.uniChip, active && styles.uniChipActive]}
+                    style={[
+                      styles.uniChip,
+                      {
+                        backgroundColor: theme.card,
+                        borderColor: theme.inputBorder,
+                      },
+                      active && styles.uniChipActive,
+                    ]}
                   >
                     <Text
                       style={[
                         styles.uniChipText,
+                        { color: theme.bodyText },
                         active && styles.uniChipTextActive,
                       ]}
                     >
@@ -766,25 +1064,59 @@ export default function App() {
             </ScrollView>
 
             {/* Filter Inputs */}
-            <View style={styles.filterRow}>
+            <View style={[styles.filterRow, rowDir]}>
               <View style={styles.filterBox}>
-                <Text style={styles.filterLabel}>Max Dist (km)</Text>
+                <Text
+                  style={[
+                    styles.filterLabel,
+                    textAlign,
+                    { color: theme.subText },
+                  ]}
+                >
+                  {t.maxDist}
+                </Text>
                 <TextInput
                   value={maxDistanceKm}
                   onChangeText={setMaxDistanceKm}
                   keyboardType="numeric"
-                  style={styles.filterInput}
+                  placeholderTextColor={theme.subText}
+                  style={[
+                    styles.filterInput,
+                    textAlign,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
                   placeholder="15"
                 />
               </View>
               <View style={styles.filterBox}>
-                <Text style={styles.filterLabel}>Max Price ($)</Text>
+                <Text
+                  style={[
+                    styles.filterLabel,
+                    textAlign,
+                    { color: theme.subText },
+                  ]}
+                >
+                  {t.maxPrice}
+                </Text>
                 <TextInput
                   value={maxPrice}
                   onChangeText={setMaxPrice}
                   keyboardType="numeric"
-                  style={styles.filterInput}
-                  placeholder="Any"
+                  placeholderTextColor={theme.subText}
+                  style={[
+                    styles.filterInput,
+                    textAlign,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
+                  placeholder={t.any}
                 />
               </View>
             </View>
@@ -795,22 +1127,24 @@ export default function App() {
               style={{ marginTop: 8 }}
             >
               {[
-                { key: '', label: 'All Room Types' },
-                { key: 'PRIVATE_ROOM', label: 'Private Room' },
-                { key: 'ENTIRE_PLACE', label: 'Entire Place' },
-                { key: 'SHARED_ROOM', label: 'Shared Room' },
+                { key: '', label: t.allRoomTypes },
+                { key: 'PRIVATE_ROOM', label: t.privateRoom },
+                { key: 'ENTIRE_PLACE', label: t.entirePlace },
+                { key: 'SHARED_ROOM', label: t.sharedRoom },
               ].map((cat) => (
                 <TouchableOpacity
                   key={cat.key}
                   onPress={() => setCategoryFilter(cat.key)}
                   style={[
                     styles.catChip,
+                    { backgroundColor: theme.subtleBg },
                     categoryFilter === cat.key && styles.catChipActive,
                   ]}
                 >
                   <Text
                     style={[
                       styles.catChipText,
+                      { color: theme.bodyText },
                       categoryFilter === cat.key && styles.catChipTextActive,
                     ]}
                   >
@@ -822,10 +1156,13 @@ export default function App() {
           </View>
 
           {/* Interactive Campus & Property Map */}
-          <View style={styles.mapContainer}>
+          <View
+            style={[styles.mapContainer, { borderColor: theme.border }]}
+          >
             <MapView
               ref={exploreMapRef}
               style={styles.map}
+              userInterfaceStyle={darkMode ? 'dark' : 'light'}
               initialRegion={{
                 latitude: selectedUni?.latitude || 30.0276,
                 longitude: selectedUni?.longitude || 31.2101,
@@ -867,11 +1204,10 @@ export default function App() {
                     <View style={styles.calloutBox}>
                       <Text style={styles.calloutTitle}>{prop.title}</Text>
                       <Text style={styles.calloutSub}>
-                        {prop.distanceToUniKm} km • From ${prop.startingPrice}/mo
+                        {prop.distanceToUniKm} km • ${prop.startingPrice}
+                        {t.perMonth}
                       </Text>
-                      <Text style={styles.calloutAction}>
-                        Tap to Book Room &rarr;
-                      </Text>
+                      <Text style={styles.calloutAction}>{t.tapToBook}</Text>
                     </View>
                   </Callout>
                 </Marker>
@@ -881,16 +1217,31 @@ export default function App() {
 
           {/* Listings List */}
           <View style={styles.sectionPad}>
-            <Text style={styles.sectionHeading}>
+            <Text
+              style={[
+                styles.sectionHeading,
+                textAlign,
+                { color: theme.text },
+              ]}
+            >
               {loadingListings
-                ? 'Searching accommodations...'
-                : `${listings.length} Student Properties Near ${
-                    selectedUni?.name || 'Campus'
+                ? t.searchingProps
+                : `${listings.length} ${t.propsNear} ${
+                    selectedUni?.name || ''
                   }`}
             </Text>
 
             {listings.map((prop) => (
-              <View key={prop.id} style={styles.card}>
+              <View
+                key={prop.id}
+                style={[
+                  styles.card,
+                  {
+                    backgroundColor: theme.card,
+                    borderColor: theme.border,
+                  },
+                ]}
+              >
                 <TouchableOpacity onPress={() => openPropertyDetails(prop)}>
                   <Image
                     source={{
@@ -901,46 +1252,86 @@ export default function App() {
                   {prop.distanceToUniKm !== undefined && (
                     <View style={styles.distanceOverlay}>
                       <Text style={styles.distanceOverlayText}>
-                        {prop.distanceToUniKm} km from campus
+                        {prop.distanceToUniKm} {t.kmFromCampus}
                       </Text>
                     </View>
                   )}
                 </TouchableOpacity>
 
                 <View style={styles.cardBody}>
-                  <View style={styles.rowBetween}>
+                  <View style={[styles.rowBetween, rowDir]}>
                     <TouchableOpacity
                       style={{ flex: 1 }}
                       onPress={() => openPropertyDetails(prop)}
                     >
-                      <Text style={styles.cardTitle}>{prop.title}</Text>
-                      <Text style={styles.cardSub}>
+                      <Text
+                        style={[
+                          styles.cardTitle,
+                          textAlign,
+                          { color: theme.text },
+                        ]}
+                      >
+                        {prop.title}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.cardSub,
+                          textAlign,
+                          { color: theme.subText },
+                        ]}
+                      >
                         {prop.address}, {prop.city}
                       </Text>
                     </TouchableOpacity>
                     {prop.startingPrice && (
-                      <View style={{ alignItems: 'flex-end' }}>
+                      <View
+                        style={{
+                          alignItems: isRTL ? 'flex-start' : 'flex-end',
+                        }}
+                      >
                         <Text style={styles.priceText}>
                           ${prop.startingPrice}
                         </Text>
-                        <Text style={styles.perMoText}>/ month</Text>
+                        <Text
+                          style={[styles.perMoText, { color: theme.subText }]}
+                        >
+                          {t.perMonth}
+                        </Text>
                       </View>
                     )}
                   </View>
 
                   {prop.commute && (
-                    <View style={styles.commuteRow}>
-                      <Text style={styles.commuteBadge}>
-                        🚶 {prop.commute.walkMins}m walk
+                    <View style={[styles.commuteRow, rowDir]}>
+                      <Text
+                        style={[
+                          styles.commuteBadge,
+                          {
+                            backgroundColor: theme.subtleBg,
+                            color: theme.bodyText,
+                          },
+                        ]}
+                      >
+                        🚶 {prop.commute.walkMins}
+                        {t.walk}
                       </Text>
-                      <Text style={styles.commuteBadge}>
-                        🚇 {prop.commute.transitMins}m transit
+                      <Text
+                        style={[
+                          styles.commuteBadge,
+                          {
+                            backgroundColor: theme.subtleBg,
+                            color: theme.bodyText,
+                          },
+                        ]}
+                      >
+                        🚇 {prop.commute.transitMins}
+                        {t.transit}
                       </Text>
                     </View>
                   )}
 
                   {prop.amenities?.length > 0 && (
-                    <View style={styles.amenityWrap}>
+                    <View style={[styles.amenityWrap, rowDir]}>
                       {prop.amenities.slice(0, 4).map((am, i) => (
                         <View key={i} style={styles.amenityTag}>
                           <Text style={styles.amenityTagText}>{am}</Text>
@@ -949,20 +1340,34 @@ export default function App() {
                     </View>
                   )}
 
-                  <View style={styles.cardFooter}>
+                  <View
+                    style={[
+                      styles.cardFooter,
+                      rowDir,
+                      { borderTopColor: theme.border },
+                    ]}
+                  >
                     <TouchableOpacity
-                      style={styles.outlineBtn}
+                      style={[
+                        styles.outlineBtn,
+                        { borderColor: theme.inputBorder },
+                      ]}
                       onPress={() => openPropertyDetails(prop)}
                     >
-                      <Text style={styles.outlineBtnText}>
-                        View Details & Rooms
+                      <Text
+                        style={[
+                          styles.outlineBtnText,
+                          { color: theme.bodyText },
+                        ]}
+                      >
+                        {t.viewDetails}
                       </Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={styles.primaryBtnSmall}
                       onPress={() => openQuickBookingModal(prop)}
                     >
-                      <Text style={styles.primaryBtnText}>Book Room</Text>
+                      <Text style={styles.primaryBtnText}>{t.bookRoom}</Text>
                     </TouchableOpacity>
                   </View>
                 </View>
@@ -977,13 +1382,19 @@ export default function App() {
         <ScrollView style={styles.flex1}>
           <View style={styles.sectionPad}>
             <TouchableOpacity onPress={() => setActiveTab('EXPLORE')}>
-              <Text style={styles.linkText}>&larr; Back to University Map</Text>
+              <Text style={[styles.linkText, textAlign]}>{t.backToMap}</Text>
             </TouchableOpacity>
 
-            <Text style={[styles.detailTitle, { marginTop: 8 }]}>
+            <Text
+              style={[
+                styles.detailTitle,
+                textAlign,
+                { marginTop: 8, color: theme.text },
+              ]}
+            >
               {selectedProperty.title}
             </Text>
-            <Text style={styles.cardSub}>
+            <Text style={[styles.cardSub, textAlign, { color: theme.subText }]}>
               {selectedProperty.address}, {selectedProperty.city}
             </Text>
 
@@ -995,7 +1406,6 @@ export default function App() {
               />
             )}
 
-            {/* 1. Multi-Photo Gallery */}
             <Image
               source={{
                 uri:
@@ -1029,18 +1439,35 @@ export default function App() {
             )}
 
             {/* About & Landlord Checked Amenities */}
-            <View style={styles.panel}>
-              <Text style={styles.panelTitle}>About This Residence</Text>
-              <Text style={styles.bodyText}>
+            <View
+              style={[
+                styles.panel,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+            >
+              <Text
+                style={[styles.panelTitle, textAlign, { color: theme.text }]}
+              >
+                {t.aboutResidence}
+              </Text>
+              <Text
+                style={[styles.bodyText, textAlign, { color: theme.bodyText }]}
+              >
                 {selectedProperty.description}
               </Text>
 
               {selectedProperty.amenities?.length > 0 && (
                 <View style={{ marginTop: 12 }}>
-                  <Text style={styles.sectionLabel}>
-                    INCLUDED AMENITIES & FACILITIES
+                  <Text
+                    style={[
+                      styles.sectionLabel,
+                      textAlign,
+                      { color: theme.subText },
+                    ]}
+                  >
+                    {t.includedAmenities}
                   </Text>
-                  <View style={styles.amenityWrap}>
+                  <View style={[styles.amenityWrap, rowDir]}>
                     {selectedProperty.amenities.map((item, idx) => (
                       <View key={idx} style={styles.amenityTag}>
                         <Text style={styles.amenityTagText}>✓ {item}</Text>
@@ -1051,33 +1478,42 @@ export default function App() {
               )}
             </View>
 
-            {/* 2. Breakdown of Room Tiers */}
-            <View style={styles.panel}>
-              <Text style={styles.panelTitle}>
-                Available Room Tiers ({detailsRooms.length})
+            {/* Breakdown of Room Tiers */}
+            <View
+              style={[
+                styles.panel,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+            >
+              <Text
+                style={[styles.panelTitle, textAlign, { color: theme.text }]}
+              >
+                {t.availableRooms} ({detailsRooms.length})
               </Text>
               <ScrollView
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 style={{ marginVertical: 8 }}
               >
-                {Object.keys(CATEGORY_LABELS).map((catKey) => (
+                {Object.keys(categoryLabels).map((catKey) => (
                   <TouchableOpacity
                     key={catKey}
                     onPress={() => setDetailsRoomCategory(catKey)}
                     style={[
                       styles.catChip,
+                      { backgroundColor: theme.subtleBg },
                       detailsRoomCategory === catKey && styles.catChipActive,
                     ]}
                   >
                     <Text
                       style={[
                         styles.catChipText,
+                        { color: theme.bodyText },
                         detailsRoomCategory === catKey &&
                           styles.catChipTextActive,
                       ]}
                     >
-                      {CATEGORY_LABELS[catKey]}
+                      {categoryLabels[catKey]}
                     </Text>
                   </TouchableOpacity>
                 ))}
@@ -1091,19 +1527,40 @@ export default function App() {
                     onPress={() => setCalcRoomId(room.id)}
                     style={[
                       styles.roomTierBox,
+                      rowDir,
+                      { borderColor: theme.border },
                       isSelected && styles.roomTierBoxActive,
                     ]}
                   >
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.roomTierName}>{room.name}</Text>
-                      <Text style={styles.cardSub}>
-                        {CATEGORY_LABELS[room.category] || room.category} •{' '}
+                      <Text
+                        style={[
+                          styles.roomTierName,
+                          textAlign,
+                          { color: isSelected ? '#0f172a' : theme.text },
+                        ]}
+                      >
+                        {room.name}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.cardSub,
+                          textAlign,
+                          { color: theme.subText },
+                        ]}
+                      >
+                        {categoryLabels[room.category] || room.category} •{' '}
                         {room.sizeSqm || 18} m²
                       </Text>
                     </View>
-                    <View style={{ alignItems: 'flex-end' }}>
+                    <View
+                      style={{
+                        alignItems: isRTL ? 'flex-start' : 'flex-end',
+                      }}
+                    >
                       <Text style={styles.priceText}>
-                        ${room.pricePerMonth}/mo
+                        ${room.pricePerMonth}
+                        {t.perMonth}
                       </Text>
                       <TouchableOpacity
                         style={[styles.primaryBtnSmall, { marginTop: 6 }]}
@@ -1115,7 +1572,7 @@ export default function App() {
                           )
                         }
                       >
-                        <Text style={styles.primaryBtnText}>Book</Text>
+                        <Text style={styles.primaryBtnText}>{t.book}</Text>
                       </TouchableOpacity>
                     </View>
                   </TouchableOpacity>
@@ -1123,61 +1580,95 @@ export default function App() {
               })}
             </View>
 
-            {/* 3. Total Lease Cost Calculator */}
-            <View style={styles.panel}>
-              <Text style={styles.panelTitle}>Total Lease Cost Calculator</Text>
-              <Text style={styles.cardSub}>
-                Selected Room: {selectedCalcRoom?.name || 'N/A'}
+            {/* Total Lease Cost Calculator */}
+            <View
+              style={[
+                styles.panel,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+            >
+              <Text
+                style={[styles.panelTitle, textAlign, { color: theme.text }]}
+              >
+                {t.leaseCalculator}
+              </Text>
+              <Text
+                style={[styles.cardSub, textAlign, { color: theme.subText }]}
+              >
+                {t.selectedRoom}: {selectedCalcRoom?.name || 'N/A'}
               </Text>
 
-              <Text style={[styles.sectionLabel, { marginTop: 12 }]}>
-                LEASE DURATION: {calcMonths} MONTHS
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  textAlign,
+                  { marginTop: 12, color: theme.subText },
+                ]}
+              >
+                {t.leaseDuration}: {calcMonths} {t.months}
               </Text>
-              <View style={styles.presetRow}>
+              <View style={[styles.presetRow, rowDir]}>
                 {[4, 6, 9, 12].map((m) => (
                   <TouchableOpacity
                     key={m}
                     onPress={() => setCalcMonths(m)}
                     style={[
                       styles.presetBtn,
+                      { borderColor: theme.inputBorder },
                       calcMonths === m && styles.presetBtnActive,
                     ]}
                   >
                     <Text
                       style={[
                         styles.presetBtnText,
+                        { color: theme.bodyText },
                         calcMonths === m && styles.presetBtnTextActive,
                       ]}
                     >
-                      {m} mos
+                      {m} {t.mos}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
-              <View style={styles.calcSummary}>
-                <View style={styles.rowBetween}>
-                  <Text style={styles.bodyText}>Monthly Rent</Text>
-                  <Text style={styles.boldText}>${calcMonthlyRent} / mo</Text>
-                </View>
-                <View style={styles.rowBetween}>
-                  <Text style={styles.bodyText}>
-                    Lease Subtotal ({calcMonths} mos)
+              <View
+                style={[styles.calcSummary, { borderTopColor: theme.border }]}
+              >
+                <View style={[styles.rowBetween, rowDir]}>
+                  <Text style={[styles.bodyText, { color: theme.bodyText }]}>
+                    {t.monthlyRent}
                   </Text>
-                  <Text style={styles.boldText}>
+                  <Text style={[styles.boldText, { color: theme.text }]}>
+                    ${calcMonthlyRent} {t.perMonth}
+                  </Text>
+                </View>
+                <View style={[styles.rowBetween, rowDir]}>
+                  <Text style={[styles.bodyText, { color: theme.bodyText }]}>
+                    {t.leaseSubtotal} ({calcMonths} {t.mos})
+                  </Text>
+                  <Text style={[styles.boldText, { color: theme.text }]}>
                     ${calcSubtotal.toLocaleString()}
                   </Text>
                 </View>
-                <View style={styles.rowBetween}>
-                  <Text style={styles.bodyText}>
-                    Refundable Security Deposit (50%)
+                <View style={[styles.rowBetween, rowDir]}>
+                  <Text style={[styles.bodyText, { color: theme.bodyText }]}>
+                    {t.securityDeposit}
                   </Text>
-                  <Text style={styles.boldText}>
+                  <Text style={[styles.boldText, { color: theme.text }]}>
                     ${calcDeposit.toLocaleString()}
                   </Text>
                 </View>
-                <View style={[styles.rowBetween, styles.calcTotalRow]}>
-                  <Text style={styles.panelTitle}>Total Estimated Lease</Text>
+                <View
+                  style={[
+                    styles.rowBetween,
+                    styles.calcTotalRow,
+                    rowDir,
+                    { borderTopColor: theme.border },
+                  ]}
+                >
+                  <Text style={[styles.panelTitle, { color: theme.text }]}>
+                    {t.totalLease}
+                  </Text>
                   <Text style={styles.priceText}>
                     ${calcGrandTotal.toLocaleString()}
                   </Text>
@@ -1195,17 +1686,32 @@ export default function App() {
                 }
               >
                 <Text style={styles.primaryBtnText}>
-                  Book This Room ({calcMonths} Months)
+                  {t.bookThisRoom} ({calcMonths} {t.mos})
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* 4. Neighborhood Map */}
-            <View style={styles.panel}>
-              <Text style={styles.panelTitle}>Neighborhood & Campus Map</Text>
-              <View style={[styles.mapContainer, { height: 220, marginTop: 8 }]}>
+            {/* Neighborhood Map */}
+            <View
+              style={[
+                styles.panel,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+            >
+              <Text
+                style={[styles.panelTitle, textAlign, { color: theme.text }]}
+              >
+                {t.neighborhoodMap}
+              </Text>
+              <View
+                style={[
+                  styles.mapContainer,
+                  { height: 220, marginTop: 8, borderColor: theme.border },
+                ]}
+              >
                 <MapView
                   style={styles.map}
+                  userInterfaceStyle={darkMode ? 'dark' : 'light'}
                   initialRegion={{
                     latitude: selectedProperty.latitude,
                     longitude: selectedProperty.longitude,
@@ -1241,31 +1747,61 @@ export default function App() {
       {activeTab === 'STUDENT' && (
         <ScrollView style={styles.flex1}>
           <View style={styles.sectionPad}>
-            <View style={styles.rowBetween}>
-              <Text style={styles.detailTitle}>My Booking Requests</Text>
+            <View style={[styles.rowBetween, rowDir]}>
+              <Text style={[styles.detailTitle, { color: theme.text }]}>
+                {t.myBookings}
+              </Text>
               <TouchableOpacity onPress={() => loadStudentBookings()}>
-                <Text style={styles.linkText}>Refresh</Text>
+                <Text style={styles.linkText}>{t.refresh}</Text>
               </TouchableOpacity>
             </View>
 
             {studentBookings.length === 0 ? (
-              <View style={styles.panel}>
-                <Text style={styles.bodyText}>
-                  You haven&apos;t submitted any room booking requests yet.
+              <View
+                style={[
+                  styles.panel,
+                  { backgroundColor: theme.card, borderColor: theme.border },
+                ]}
+              >
+                <Text
+                  style={[styles.bodyText, textAlign, { color: theme.bodyText }]}
+                >
+                  {t.noStudentBookings}
                 </Text>
               </View>
             ) : (
               studentBookings.map((b) => (
-                <View key={b.id} style={styles.panel}>
-                  <Text style={styles.roomTierName}>
+                <View
+                  key={b.id}
+                  style={[
+                    styles.panel,
+                    { backgroundColor: theme.card, borderColor: theme.border },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      styles.roomTierName,
+                      textAlign,
+                      { color: theme.text },
+                    ]}
+                  >
                     {b.roomType?.property?.title || 'Student Property'}
                   </Text>
-                  <Text style={styles.bodyText}>
-                    Room: {b.roomType?.name} • ${b.roomType?.pricePerMonth}/mo
+                  <Text
+                    style={[
+                      styles.bodyText,
+                      textAlign,
+                      { color: theme.bodyText },
+                    ]}
+                  >
+                    {b.roomType?.name} • ${b.roomType?.pricePerMonth}
+                    {t.perMonth}
                   </Text>
-                  <Text style={styles.cardSub}>
-                    Move-in: {new Date(b.moveInDate).toLocaleDateString()} •{' '}
-                    {b.durationMonths} months
+                  <Text
+                    style={[styles.cardSub, textAlign, { color: theme.subText }]}
+                  >
+                    {t.moveIn}: {new Date(b.moveInDate).toLocaleDateString()} •{' '}
+                    {b.durationMonths} {t.mos}
                   </Text>
                   <View style={[styles.statusBadge, { marginTop: 8 }]}>
                     <Text style={styles.statusBadgeText}>{b.status}</Text>
@@ -1281,91 +1817,192 @@ export default function App() {
       {activeTab === 'LANDLORD' && (
         <ScrollView ref={landlordScrollRef} style={styles.flex1}>
           <View style={styles.sectionPad}>
-            {/* Publish / Edit Property Form */}
-            <View style={styles.panel}>
-              <View style={styles.rowBetween}>
-                <Text style={styles.panelTitle}>
-                  {editingPropertyId
-                    ? '✏️ Edit Student Property'
-                    : '🏢 Publish New Property'}
+            <View
+              style={[
+                styles.panel,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+            >
+              <View style={[styles.rowBetween, rowDir]}>
+                <Text style={[styles.panelTitle, { color: theme.text }]}>
+                  {editingPropertyId ? t.editProperty : t.publishProperty}
                 </Text>
                 {editingPropertyId && (
                   <TouchableOpacity onPress={resetLandlordForm}>
-                    <Text style={styles.logoutText}>Cancel Edit</Text>
+                    <Text style={styles.logoutText}>{t.cancelEdit}</Text>
                   </TouchableOpacity>
                 )}
               </View>
 
-              <Text style={styles.inputLabel}>Property Title</Text>
+              <Text
+                style={[styles.inputLabel, textAlign, { color: theme.subText }]}
+              >
+                {t.propTitle}
+              </Text>
               <TextInput
                 value={propTitle}
                 onChangeText={setPropTitle}
                 placeholder="e.g., Bloomsbury Student Studios"
-                style={styles.textInput}
+                placeholderTextColor={theme.subText}
+                style={[
+                  styles.textInput,
+                  textAlign,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
               />
 
-              <View style={styles.filterRow}>
+              <View style={[styles.filterRow, rowDir]}>
                 <View style={{ flex: 2 }}>
-                  <Text style={styles.inputLabel}>Street Address</Text>
+                  <Text
+                    style={[
+                      styles.inputLabel,
+                      textAlign,
+                      { color: theme.subText },
+                    ]}
+                  >
+                    {t.streetAddress}
+                  </Text>
                   <TextInput
                     value={propAddress}
                     onChangeText={setPropAddress}
                     placeholder="42 Gower Street"
-                    style={styles.textInput}
+                    placeholderTextColor={theme.subText}
+                    style={[
+                      styles.textInput,
+                      textAlign,
+                      {
+                        backgroundColor: theme.inputBg,
+                        borderColor: theme.inputBorder,
+                        color: theme.text,
+                      },
+                    ]}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.inputLabel}>City</Text>
+                  <Text
+                    style={[
+                      styles.inputLabel,
+                      textAlign,
+                      { color: theme.subText },
+                    ]}
+                  >
+                    {t.city}
+                  </Text>
                   <TextInput
                     value={propCity}
                     onChangeText={setPropCity}
                     placeholder="London"
-                    style={styles.textInput}
+                    placeholderTextColor={theme.subText}
+                    style={[
+                      styles.textInput,
+                      textAlign,
+                      {
+                        backgroundColor: theme.inputBg,
+                        borderColor: theme.inputBorder,
+                        color: theme.text,
+                      },
+                    ]}
                   />
                 </View>
               </View>
 
-              <Text style={styles.inputLabel}>Description</Text>
+              <Text
+                style={[styles.inputLabel, textAlign, { color: theme.subText }]}
+              >
+                {t.description}
+              </Text>
               <TextInput
                 value={propDesc}
                 onChangeText={setPropDesc}
                 placeholder="Describe study spaces, security, transport..."
-                style={styles.textInput}
+                placeholderTextColor={theme.subText}
+                style={[
+                  styles.textInput,
+                  textAlign,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
                 multiline
               />
 
               {/* Street Search Autocomplete + Interactive Map Location Picker */}
-              <Text style={[styles.sectionLabel, { marginTop: 14 }]}>
-                SEARCH STREET & PINPOINT LOCATION ON MAP
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  textAlign,
+                  { marginTop: 14, color: theme.subText },
+                ]}
+              >
+                {t.searchStreetLabel}
               </Text>
               <TextInput
                 value={streetQuery}
                 onChangeText={setStreetQuery}
-                placeholder="🔍 Search street (e.g., Gower Street, London)..."
-                style={styles.textInput}
+                placeholder={t.searchStreetPlaceholder}
+                placeholderTextColor={theme.subText}
+                style={[
+                  styles.textInput,
+                  textAlign,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
               />
               {searchingStreet && (
-                <Text style={styles.cardSub}>Searching streets...</Text>
+                <Text style={[styles.cardSub, { color: theme.subText }]}>
+                  {t.searchingStreets}
+                </Text>
               )}
               {streetResults.map((place) => (
                 <TouchableOpacity
                   key={place.place_id}
                   onPress={() => handleSelectStreet(place)}
-                  style={styles.streetOption}
+                  style={[
+                    styles.streetOption,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderBottomColor: theme.border,
+                    },
+                  ]}
                 >
-                  <Text style={styles.boldText} numberOfLines={1}>
+                  <Text
+                    style={[styles.boldText, textAlign, { color: theme.text }]}
+                    numberOfLines={1}
+                  >
                     📍 {place.display_name.split(',')[0]}
                   </Text>
-                  <Text style={styles.cardSub} numberOfLines={1}>
+                  <Text
+                    style={[
+                      styles.cardSub,
+                      textAlign,
+                      { color: theme.subText },
+                    ]}
+                    numberOfLines={1}
+                  >
                     {place.display_name}
                   </Text>
                 </TouchableOpacity>
               ))}
 
-              <View style={[styles.mapContainer, { height: 220, marginTop: 8 }]}>
+              <View
+                style={[
+                  styles.mapContainer,
+                  { height: 220, marginTop: 8, borderColor: theme.border },
+                ]}
+              >
                 <MapView
                   ref={landlordMapRef}
                   style={styles.map}
+                  userInterfaceStyle={darkMode ? 'dark' : 'light'}
                   initialRegion={{
                     latitude: propLat,
                     longitude: propLng,
@@ -1386,20 +2023,25 @@ export default function App() {
                       setPropLat(Number(latitude.toFixed(6)));
                       setPropLng(Number(longitude.toFixed(6)));
                     }}
-                    title="Property Pin (Tap map or drag)"
+                    title="Property Pin"
                   />
                 </MapView>
               </View>
-              <Text style={styles.coordHint}>
-                👆 Tap anywhere on the map or drag pin ({propLat.toFixed(4)},{' '}
-                {propLng.toFixed(4)})
+              <Text style={[styles.coordHint, { color: theme.subText }]}>
+                {t.tapMapHint} ({propLat.toFixed(4)}, {propLng.toFixed(4)})
               </Text>
 
               {/* Amenities & Facilities Checkboxes */}
-              <Text style={[styles.sectionLabel, { marginTop: 14 }]}>
-                AMENITIES & FACILITIES ({selectedAmenities.length} SELECTED)
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  textAlign,
+                  { marginTop: 14, color: theme.subText },
+                ]}
+              >
+                {t.amenitiesLabel} ({selectedAmenities.length} {t.selected})
               </Text>
-              <View style={styles.amenityWrap}>
+              <View style={[styles.amenityWrap, rowDir]}>
                 {allAmenityCheckboxes.map((am) => {
                   const checked = selectedAmenities.includes(am);
                   return (
@@ -1414,12 +2056,17 @@ export default function App() {
                       }
                       style={[
                         styles.checkboxPill,
+                        {
+                          backgroundColor: theme.inputBg,
+                          borderColor: theme.inputBorder,
+                        },
                         checked && styles.checkboxPillActive,
                       ]}
                     >
                       <Text
                         style={[
                           styles.checkboxPillText,
+                          { color: theme.bodyText },
                           checked && styles.checkboxPillTextActive,
                         ]}
                       >
@@ -1431,46 +2078,86 @@ export default function App() {
                 })}
               </View>
 
-              <View style={[styles.filterRow, { marginTop: 8 }]}>
+              <View style={[styles.filterRow, rowDir, { marginTop: 8 }]}>
                 <TextInput
                   value={customAmenity}
                   onChangeText={setCustomAmenity}
-                  placeholder="Add custom facility..."
-                  style={[styles.textInput, { flex: 1, marginTop: 0 }]}
+                  placeholder={t.addCustomFacility}
+                  placeholderTextColor={theme.subText}
+                  style={[
+                    styles.textInput,
+                    textAlign,
+                    {
+                      flex: 1,
+                      marginTop: 0,
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
                 />
                 <TouchableOpacity
-                  style={styles.outlineBtn}
+                  style={[
+                    styles.outlineBtn,
+                    { borderColor: theme.inputBorder },
+                  ]}
                   onPress={() => {
-                    const t = customAmenity.trim();
-                    if (t && !selectedAmenities.includes(t)) {
-                      setSelectedAmenities((prev) => [...prev, t]);
+                    const trimmed = customAmenity.trim();
+                    if (trimmed && !selectedAmenities.includes(trimmed)) {
+                      setSelectedAmenities((prev) => [...prev, trimmed]);
                     }
                     setCustomAmenity('');
                   }}
                 >
-                  <Text style={styles.outlineBtnText}>+ Add</Text>
+                  <Text
+                    style={[styles.outlineBtnText, { color: theme.bodyText }]}
+                  >
+                    {t.add}
+                  </Text>
                 </TouchableOpacity>
               </View>
 
               {/* Property Photos Manager */}
-              <Text style={[styles.sectionLabel, { marginTop: 14 }]}>
-                PROPERTY PHOTOS ({propImages.length})
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  textAlign,
+                  { marginTop: 14, color: theme.subText },
+                ]}
+              >
+                {t.propertyPhotos} ({propImages.length})
               </Text>
               <TouchableOpacity
-                style={[styles.outlineBtn, { marginBottom: 8 }]}
+                style={[
+                  styles.outlineBtn,
+                  { marginBottom: 8, borderColor: theme.inputBorder },
+                ]}
                 onPress={handlePickImageFromDevice}
               >
-                <Text style={styles.outlineBtnText}>
-                  📷 Pick Photos from Phone Gallery
+                <Text
+                  style={[styles.outlineBtnText, { color: theme.bodyText }]}
+                >
+                  {t.pickFromGallery}
                 </Text>
               </TouchableOpacity>
 
-              <View style={styles.filterRow}>
+              <View style={[styles.filterRow, rowDir]}>
                 <TextInput
                   value={imageUrlInput}
                   onChangeText={setImageUrlInput}
-                  placeholder="Or paste image URL (https://...)"
-                  style={[styles.textInput, { flex: 1, marginTop: 0 }]}
+                  placeholder={t.pasteImageUrl}
+                  placeholderTextColor={theme.subText}
+                  style={[
+                    styles.textInput,
+                    textAlign,
+                    {
+                      flex: 1,
+                      marginTop: 0,
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
                 />
                 <TouchableOpacity
                   style={styles.primaryBtnSmall}
@@ -1481,7 +2168,7 @@ export default function App() {
                     }
                   }}
                 >
-                  <Text style={styles.primaryBtnText}>Add URL</Text>
+                  <Text style={styles.primaryBtnText}>{t.addUrl}</Text>
                 </TouchableOpacity>
               </View>
 
@@ -1491,11 +2178,20 @@ export default function App() {
                 style={{ marginTop: 10 }}
               >
                 {propImages.map((uri, idx) => (
-                  <View key={idx} style={styles.photoPreviewBox}>
+                  <View
+                    key={idx}
+                    style={[
+                      styles.photoPreviewBox,
+                      {
+                        backgroundColor: theme.inputBg,
+                        borderColor: theme.inputBorder,
+                      },
+                    ]}
+                  >
                     <Image source={{ uri }} style={styles.photoPreviewImg} />
-                    <View style={styles.photoPreviewActions}>
+                    <View style={[styles.photoPreviewActions, rowDir]}>
                       {idx === 0 ? (
-                        <Text style={styles.coverLabel}>Cover</Text>
+                        <Text style={styles.coverLabel}>{t.cover}</Text>
                       ) : (
                         <TouchableOpacity
                           onPress={() =>
@@ -1506,7 +2202,7 @@ export default function App() {
                             })
                           }
                         >
-                          <Text style={styles.linkText}>Set Cover</Text>
+                          <Text style={styles.linkText}>{t.setCover}</Text>
                         </TouchableOpacity>
                       )}
                       <TouchableOpacity
@@ -1524,55 +2220,104 @@ export default function App() {
               </ScrollView>
 
               {/* Primary Room Configuration */}
-              <Text style={[styles.sectionLabel, { marginTop: 14 }]}>
-                PRIMARY ROOM TIER DETAILS
+              <Text
+                style={[
+                  styles.sectionLabel,
+                  textAlign,
+                  { marginTop: 14, color: theme.subText },
+                ]}
+              >
+                {t.primaryRoomDetails}
               </Text>
               <TextInput
                 value={roomName}
                 onChangeText={setRoomName}
-                placeholder="Room Tier Name"
-                style={styles.textInput}
+                placeholder={t.roomTierName}
+                placeholderTextColor={theme.subText}
+                style={[
+                  styles.textInput,
+                  textAlign,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
               />
 
-              <View style={styles.presetRow}>
+              <View style={[styles.presetRow, rowDir]}>
                 {['PRIVATE_ROOM', 'ENTIRE_PLACE', 'SHARED_ROOM'].map((cat) => (
                   <TouchableOpacity
                     key={cat}
                     onPress={() => setRoomCategory(cat)}
                     style={[
                       styles.presetBtn,
+                      { borderColor: theme.inputBorder },
                       roomCategory === cat && styles.presetBtnActive,
                     ]}
                   >
                     <Text
                       style={[
                         styles.presetBtnText,
+                        { color: theme.bodyText },
                         roomCategory === cat && styles.presetBtnTextActive,
                       ]}
                     >
-                      {CATEGORY_LABELS[cat]}
+                      {categoryLabels[cat]}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
-              <View style={styles.filterRow}>
+              <View style={[styles.filterRow, rowDir]}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.inputLabel}>Price / Month ($)</Text>
+                  <Text
+                    style={[
+                      styles.inputLabel,
+                      textAlign,
+                      { color: theme.subText },
+                    ]}
+                  >
+                    {t.pricePerMo}
+                  </Text>
                   <TextInput
                     value={pricePerMonth}
                     onChangeText={setPricePerMonth}
                     keyboardType="numeric"
-                    style={styles.textInput}
+                    style={[
+                      styles.textInput,
+                      textAlign,
+                      {
+                        backgroundColor: theme.inputBg,
+                        borderColor: theme.inputBorder,
+                        color: theme.text,
+                      },
+                    ]}
                   />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.inputLabel}>Size (m²)</Text>
+                  <Text
+                    style={[
+                      styles.inputLabel,
+                      textAlign,
+                      { color: theme.subText },
+                    ]}
+                  >
+                    {t.sizeSqm}
+                  </Text>
                   <TextInput
                     value={sizeSqm}
                     onChangeText={setSizeSqm}
                     keyboardType="numeric"
-                    style={styles.textInput}
+                    style={[
+                      styles.textInput,
+                      textAlign,
+                      {
+                        backgroundColor: theme.inputBg,
+                        borderColor: theme.inputBorder,
+                        color: theme.text,
+                      },
+                    ]}
                   />
                 </View>
               </View>
@@ -1584,49 +2329,92 @@ export default function App() {
               >
                 <Text style={styles.primaryBtnText}>
                   {savingProperty
-                    ? 'Saving...'
+                    ? t.saving
                     : editingPropertyId
-                    ? 'Save Property Changes'
-                    : 'Publish Property Listing'}
+                    ? t.saveChanges
+                    : t.publishListing}
                 </Text>
               </TouchableOpacity>
             </View>
 
-            {/* My Listed Properties Section (Edit / Delete) */}
-            <View style={styles.panel}>
-              <Text style={styles.panelTitle}>
-                My Listed Properties ({myProperties.length})
+            {/* My Listed Properties Section */}
+            <View
+              style={[
+                styles.panel,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+            >
+              <Text
+                style={[styles.panelTitle, textAlign, { color: theme.text }]}
+              >
+                {t.myListedProps} ({myProperties.length})
               </Text>
               {myProperties.length === 0 ? (
-                <Text style={styles.cardSub}>
-                  No properties published yet.
+                <Text
+                  style={[styles.cardSub, textAlign, { color: theme.subText }]}
+                >
+                  {t.noListedProps}
                 </Text>
               ) : (
                 myProperties.map((prop) => (
-                  <View key={prop.id} style={styles.roomTierBox}>
+                  <View
+                    key={prop.id}
+                    style={[
+                      styles.roomTierBox,
+                      rowDir,
+                      { borderColor: theme.border },
+                    ]}
+                  >
                     <View style={{ flex: 1 }}>
-                      <Text style={styles.roomTierName}>{prop.title}</Text>
-                      <Text style={styles.cardSub}>
+                      <Text
+                        style={[
+                          styles.roomTierName,
+                          textAlign,
+                          { color: theme.text },
+                        ]}
+                      >
+                        {prop.title}
+                      </Text>
+                      <Text
+                        style={[
+                          styles.cardSub,
+                          textAlign,
+                          { color: theme.subText },
+                        ]}
+                      >
                         {prop.address}, {prop.city} •{' '}
-                        {prop.amenities?.length || 0} amenities
+                        {prop.amenities?.length || 0} {t.amenitiesCount}
                       </Text>
                     </View>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                      <TouchableOpacity
-                        style={styles.outlineBtn}
-                        onPress={() => handleStartEditProperty(prop)}
-                      >
-                        <Text style={styles.outlineBtnText}>Edit</Text>
-                      </TouchableOpacity>
+                    <View style={[rowDir, { gap: 8 }]}>
                       <TouchableOpacity
                         style={[
                           styles.outlineBtn,
-                          { borderColor: '#ef4444' },
+                          { borderColor: theme.inputBorder },
                         ]}
+                        onPress={() => handleStartEditProperty(prop)}
+                      >
+                        <Text
+                          style={[
+                            styles.outlineBtnText,
+                            { color: theme.bodyText },
+                          ]}
+                        >
+                          {t.edit}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.outlineBtn, { borderColor: '#ef4444' }]}
                         onPress={() => handleDeleteProperty(prop)}
                       >
-                        <Text style={{ color: '#dc2626', fontSize: 12, fontWeight: '700' }}>
-                          Delete
+                        <Text
+                          style={{
+                            color: '#dc2626',
+                            fontSize: 12,
+                            fontWeight: '700',
+                          }}
+                        >
+                          {t.delete}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -1636,21 +2424,53 @@ export default function App() {
             </View>
 
             {/* Incoming Student Bookings Section */}
-            <View style={styles.panel}>
-              <Text style={styles.panelTitle}>
-                Incoming Student Bookings ({landlordBookings.length})
+            <View
+              style={[
+                styles.panel,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+            >
+              <Text
+                style={[styles.panelTitle, textAlign, { color: theme.text }]}
+              >
+                {t.incomingBookings} ({landlordBookings.length})
               </Text>
               {landlordBookings.map((b) => (
-                <View key={b.id} style={styles.roomTierBox}>
+                <View
+                  key={b.id}
+                  style={[
+                    styles.roomTierBox,
+                    rowDir,
+                    { borderColor: theme.border },
+                  ]}
+                >
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.roomTierName}>
+                    <Text
+                      style={[
+                        styles.roomTierName,
+                        textAlign,
+                        { color: theme.text },
+                      ]}
+                    >
                       {b.roomType?.property?.title} — {b.roomType?.name}
                     </Text>
-                    <Text style={styles.bodyText}>
-                      Student: {b.student?.name} ({b.student?.email})
+                    <Text
+                      style={[
+                        styles.bodyText,
+                        textAlign,
+                        { color: theme.bodyText },
+                      ]}
+                    >
+                      {t.student}: {b.student?.name} ({b.student?.email})
                     </Text>
-                    <Text style={styles.cardSub}>
-                      Status: {b.status} • {b.durationMonths} mos
+                    <Text
+                      style={[
+                        styles.cardSub,
+                        textAlign,
+                        { color: theme.subText },
+                      ]}
+                    >
+                      {t.status}: {b.status} • {b.durationMonths} {t.mos}
                     </Text>
                   </View>
                   {b.status === 'PENDING' && (
@@ -1664,7 +2484,7 @@ export default function App() {
                           handleUpdateBookingStatus(b.id, 'APPROVED')
                         }
                       >
-                        <Text style={styles.primaryBtnText}>Approve</Text>
+                        <Text style={styles.primaryBtnText}>{t.approve}</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[
@@ -1675,7 +2495,7 @@ export default function App() {
                           handleUpdateBookingStatus(b.id, 'REJECTED')
                         }
                       >
-                        <Text style={styles.primaryBtnText}>Reject</Text>
+                        <Text style={styles.primaryBtnText}>{t.reject}</Text>
                       </TouchableOpacity>
                     </View>
                   )}
@@ -1686,20 +2506,28 @@ export default function App() {
         </ScrollView>
       )}
 
-      {/* SCREEN 5: LOGIN & REGISTER (STUDENT / LANDLORD) */}
+      {/* SCREEN 5: LOGIN & REGISTER */}
       {activeTab === 'AUTH' && (
         <ScrollView style={styles.flex1}>
           <View style={styles.sectionPad}>
-            <View style={styles.panel}>
-              <Text style={styles.detailTitle}>
-                {authMode === 'LOGIN' ? 'Welcome Back' : 'Create an Account'}
+            <View
+              style={[
+                styles.panel,
+                { backgroundColor: theme.card, borderColor: theme.border },
+              ]}
+            >
+              <Text
+                style={[styles.detailTitle, textAlign, { color: theme.text }]}
+              >
+                {authMode === 'LOGIN' ? t.welcomeBack : t.createAccount}
               </Text>
 
               {authMode === 'REGISTER' && (
-                <View style={[styles.presetRow, { marginVertical: 12 }]}>
+                <View style={[styles.presetRow, rowDir, { marginVertical: 12 }]}>
                   <TouchableOpacity
                     style={[
                       styles.presetBtn,
+                      { borderColor: theme.inputBorder },
                       authRole === 'STUDENT' && styles.presetBtnActive,
                     ]}
                     onPress={() => setAuthRole('STUDENT')}
@@ -1707,15 +2535,17 @@ export default function App() {
                     <Text
                       style={[
                         styles.presetBtnText,
+                        { color: theme.bodyText },
                         authRole === 'STUDENT' && styles.presetBtnTextActive,
                       ]}
                     >
-                      🎓 I am a Student
+                      {t.iAmStudent}
                     </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
                     style={[
                       styles.presetBtn,
+                      { borderColor: theme.inputBorder },
                       authRole === 'LANDLORD' && styles.presetBtnActive,
                     ]}
                     onPress={() => setAuthRole('LANDLORD')}
@@ -1723,10 +2553,11 @@ export default function App() {
                     <Text
                       style={[
                         styles.presetBtnText,
+                        { color: theme.bodyText },
                         authRole === 'LANDLORD' && styles.presetBtnTextActive,
                       ]}
                     >
-                      🏢 I am a Landlord
+                      {t.iAmLandlord}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -1738,40 +2569,100 @@ export default function App() {
 
               {authMode === 'REGISTER' && (
                 <>
-                  <Text style={styles.inputLabel}>Full Name</Text>
+                  <Text
+                    style={[
+                      styles.inputLabel,
+                      textAlign,
+                      { color: theme.subText },
+                    ]}
+                  >
+                    {t.fullName}
+                  </Text>
                   <TextInput
                     value={authName}
                     onChangeText={setAuthName}
                     placeholder="Samir Mohamed"
-                    style={styles.textInput}
+                    placeholderTextColor={theme.subText}
+                    style={[
+                      styles.textInput,
+                      textAlign,
+                      {
+                        backgroundColor: theme.inputBg,
+                        borderColor: theme.inputBorder,
+                        color: theme.text,
+                      },
+                    ]}
                   />
-                  <Text style={styles.inputLabel}>Phone Number</Text>
+                  <Text
+                    style={[
+                      styles.inputLabel,
+                      textAlign,
+                      { color: theme.subText },
+                    ]}
+                  >
+                    {t.phone}
+                  </Text>
                   <TextInput
                     value={authPhone}
                     onChangeText={setAuthPhone}
                     placeholder="+20 100 000 0000"
-                    style={styles.textInput}
+                    placeholderTextColor={theme.subText}
+                    style={[
+                      styles.textInput,
+                      textAlign,
+                      {
+                        backgroundColor: theme.inputBg,
+                        borderColor: theme.inputBorder,
+                        color: theme.text,
+                      },
+                    ]}
                   />
                 </>
               )}
 
-              <Text style={styles.inputLabel}>Email Address</Text>
+              <Text
+                style={[styles.inputLabel, textAlign, { color: theme.subText }]}
+              >
+                {t.email}
+              </Text>
               <TextInput
                 value={authEmail}
                 onChangeText={setAuthEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 placeholder="you@university.edu"
-                style={styles.textInput}
+                placeholderTextColor={theme.subText}
+                style={[
+                  styles.textInput,
+                  textAlign,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
               />
 
-              <Text style={styles.inputLabel}>Password</Text>
+              <Text
+                style={[styles.inputLabel, textAlign, { color: theme.subText }]}
+              >
+                {t.password}
+              </Text>
               <TextInput
                 value={authPassword}
                 onChangeText={setAuthPassword}
                 secureTextEntry
                 placeholder="••••••••"
-                style={styles.textInput}
+                placeholderTextColor={theme.subText}
+                style={[
+                  styles.textInput,
+                  textAlign,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderColor: theme.inputBorder,
+                    color: theme.text,
+                  },
+                ]}
               />
 
               <TouchableOpacity
@@ -1781,32 +2672,52 @@ export default function App() {
               >
                 <Text style={styles.primaryBtnText}>
                   {authLoading
-                    ? 'Please wait...'
+                    ? t.pleaseWait
                     : authMode === 'LOGIN'
-                    ? 'Sign In'
-                    : `Sign Up as ${authRole}`}
+                    ? t.signIn
+                    : `${t.signUpAs} ${authRole}`}
                 </Text>
               </TouchableOpacity>
 
               {authMode === 'LOGIN' && (
-                <View style={[styles.presetRow, { marginTop: 14 }]}>
+                <View style={[styles.presetRow, rowDir, { marginTop: 14 }]}>
                   <TouchableOpacity
-                    style={styles.outlineBtn}
+                    style={[
+                      styles.outlineBtn,
+                      { flex: 1, borderColor: theme.inputBorder },
+                    ]}
                     onPress={() => {
                       setAuthEmail('student@unihousing.com');
                       setAuthPassword('password123');
                     }}
                   >
-                    <Text style={styles.outlineBtnText}>Fill Student Demo</Text>
+                    <Text
+                      style={[
+                        styles.outlineBtnText,
+                        { color: theme.bodyText },
+                      ]}
+                    >
+                      {t.fillStudentDemo}
+                    </Text>
                   </TouchableOpacity>
                   <TouchableOpacity
-                    style={styles.outlineBtn}
+                    style={[
+                      styles.outlineBtn,
+                      { flex: 1, borderColor: theme.inputBorder },
+                    ]}
                     onPress={() => {
                       setAuthEmail('landlord@unihousing.com');
                       setAuthPassword('password123');
                     }}
                   >
-                    <Text style={styles.outlineBtnText}>Fill Landlord Demo</Text>
+                    <Text
+                      style={[
+                        styles.outlineBtnText,
+                        { color: theme.bodyText },
+                      ]}
+                    >
+                      {t.fillLandlordDemo}
+                    </Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -1819,8 +2730,8 @@ export default function App() {
               >
                 <Text style={styles.linkText}>
                   {authMode === 'LOGIN'
-                    ? "Don't have an account? Create one"
-                    : 'Already have an account? Sign In'}
+                    ? t.noAccountPrompt
+                    : t.hasAccountPrompt}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1829,7 +2740,13 @@ export default function App() {
       )}
 
       {/* BOTTOM NAVIGATION BAR */}
-      <View style={styles.bottomTabs}>
+      <View
+        style={[
+          styles.bottomTabs,
+          rowDir,
+          { backgroundColor: theme.card, borderTopColor: theme.border },
+        ]}
+      >
         <TouchableOpacity
           style={styles.tabItem}
           onPress={() => setActiveTab('EXPLORE')}
@@ -1837,10 +2754,11 @@ export default function App() {
           <Text
             style={[
               styles.tabText,
+              { color: theme.subText },
               activeTab === 'EXPLORE' && styles.tabTextActive,
             ]}
           >
-            🗺️ Explore
+            {t.tabExplore}
           </Text>
         </TouchableOpacity>
 
@@ -1855,10 +2773,11 @@ export default function App() {
             <Text
               style={[
                 styles.tabText,
+                { color: theme.subText },
                 activeTab === 'STUDENT' && styles.tabTextActive,
               ]}
             >
-              📋 My Bookings
+              {t.tabBookings}
             </Text>
           </TouchableOpacity>
         )}
@@ -1874,10 +2793,11 @@ export default function App() {
             <Text
               style={[
                 styles.tabText,
+                { color: theme.subText },
                 activeTab === 'LANDLORD' && styles.tabTextActive,
               ]}
             >
-              🏢 Landlord Portal
+              {t.tabLandlord}
             </Text>
           </TouchableOpacity>
         )}
@@ -1890,10 +2810,11 @@ export default function App() {
             <Text
               style={[
                 styles.tabText,
+                { color: theme.subText },
                 activeTab === 'AUTH' && styles.tabTextActive,
               ]}
             >
-              🔑 Account
+              {t.tabAccount}
             </Text>
           </TouchableOpacity>
         )}
@@ -1902,53 +2823,123 @@ export default function App() {
       {/* MODAL 1: BOOK ROOM REQUEST */}
       <Modal visible={bookingModalOpen} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.panelTitle}>
-              Book {bookingProperty?.title}
+          <View
+            style={[
+              styles.modalCard,
+              { backgroundColor: theme.card, borderColor: theme.border },
+            ]}
+          >
+            <Text
+              style={[styles.panelTitle, textAlign, { color: theme.text }]}
+            >
+              {t.book} {bookingProperty?.title}
             </Text>
 
-            <Text style={styles.inputLabel}>Student Name</Text>
+            <Text
+              style={[styles.inputLabel, textAlign, { color: theme.subText }]}
+            >
+              {t.fullName}
+            </Text>
             <TextInput
               value={studentName}
               onChangeText={setStudentName}
-              style={styles.textInput}
+              style={[
+                styles.textInput,
+                textAlign,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: theme.inputBorder,
+                  color: theme.text,
+                },
+              ]}
             />
 
-            <Text style={styles.inputLabel}>Student Email</Text>
+            <Text
+              style={[styles.inputLabel, textAlign, { color: theme.subText }]}
+            >
+              {t.email}
+            </Text>
             <TextInput
               value={studentEmail}
               onChangeText={setStudentEmail}
               keyboardType="email-address"
               autoCapitalize="none"
-              style={styles.textInput}
+              style={[
+                styles.textInput,
+                textAlign,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: theme.inputBorder,
+                  color: theme.text,
+                },
+              ]}
             />
 
-            <View style={styles.filterRow}>
+            <View style={[styles.filterRow, rowDir]}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.inputLabel}>Move-in Date</Text>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    textAlign,
+                    { color: theme.subText },
+                  ]}
+                >
+                  {t.moveIn}
+                </Text>
                 <TextInput
                   value={moveInDate}
                   onChangeText={setMoveInDate}
-                  style={styles.textInput}
+                  style={[
+                    styles.textInput,
+                    textAlign,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.inputLabel}>Months</Text>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    textAlign,
+                    { color: theme.subText },
+                  ]}
+                >
+                  {t.months}
+                </Text>
                 <TextInput
                   value={durationMonths}
                   onChangeText={setDurationMonths}
                   keyboardType="numeric"
-                  style={styles.textInput}
+                  style={[
+                    styles.textInput,
+                    textAlign,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
                 />
               </View>
             </View>
 
-            <View style={[styles.filterRow, { marginTop: 16 }]}>
+            <View style={[styles.filterRow, rowDir, { marginTop: 16 }]}>
               <TouchableOpacity
-                style={[styles.outlineBtn, { flex: 1 }]}
+                style={[
+                  styles.outlineBtn,
+                  { flex: 1, borderColor: theme.inputBorder },
+                ]}
                 onPress={() => setBookingModalOpen(false)}
               >
-                <Text style={styles.outlineBtnText}>Cancel</Text>
+                <Text
+                  style={[styles.outlineBtnText, { color: theme.bodyText }]}
+                >
+                  {t.cancel}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.primaryBtn, { flex: 1 }]}
@@ -1956,7 +2947,7 @@ export default function App() {
                 disabled={bookingSubmitting}
               >
                 <Text style={styles.primaryBtnText}>
-                  {bookingSubmitting ? 'Sending...' : 'Confirm Booking'}
+                  {bookingSubmitting ? t.sending : t.confirmBooking}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1967,18 +2958,42 @@ export default function App() {
       {/* MODAL 2: ADD NEW UNIVERSITY CAMPUS */}
       <Modal visible={uniModalOpen} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <Text style={styles.panelTitle}>🎓 Add University Campus</Text>
+          <View
+            style={[
+              styles.modalCard,
+              { backgroundColor: theme.card, borderColor: theme.border },
+            ]}
+          >
+            <Text
+              style={[styles.panelTitle, textAlign, { color: theme.text }]}
+            >
+              {t.addUniTitle}
+            </Text>
             <TextInput
               value={uniSearchQuery}
               onChangeText={setUniSearchQuery}
-              placeholder="🔍 Auto-fill: Search university name..."
-              style={styles.textInput}
+              placeholder={t.autoFillUni}
+              placeholderTextColor={theme.subText}
+              style={[
+                styles.textInput,
+                textAlign,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: theme.inputBorder,
+                  color: theme.text,
+                },
+              ]}
             />
             {uniSearchResults.map((place) => (
               <TouchableOpacity
                 key={place.place_id}
-                style={styles.streetOption}
+                style={[
+                  styles.streetOption,
+                  {
+                    backgroundColor: theme.inputBg,
+                    borderBottomColor: theme.border,
+                  },
+                ]}
                 onPress={() => {
                   const addr = place.address || {};
                   setNewUniName(place.name || place.display_name.split(',')[0]);
@@ -1986,75 +3001,165 @@ export default function App() {
                     addr.city || addr.town || addr.state || 'Cairo'
                   );
                   setNewUniCountry(addr.country || 'Egypt');
-                  setNewUniLat(String(Number(parseFloat(place.lat).toFixed(6))));
-                  setNewUniLng(String(Number(parseFloat(place.lon).toFixed(6))));
+                  setNewUniLat(
+                    String(Number(parseFloat(place.lat).toFixed(6)))
+                  );
+                  setNewUniLng(
+                    String(Number(parseFloat(place.lon).toFixed(6)))
+                  );
                   setUniSearchResults([]);
                   setUniSearchQuery('');
                 }}
               >
-                <Text style={styles.boldText} numberOfLines={1}>
+                <Text
+                  style={[styles.boldText, textAlign, { color: theme.text }]}
+                  numberOfLines={1}
+                >
                   {place.display_name}
                 </Text>
               </TouchableOpacity>
             ))}
 
-            <Text style={styles.inputLabel}>University Name</Text>
+            <Text
+              style={[styles.inputLabel, textAlign, { color: theme.subText }]}
+            >
+              {t.uniName}
+            </Text>
             <TextInput
               value={newUniName}
               onChangeText={setNewUniName}
-              style={styles.textInput}
+              style={[
+                styles.textInput,
+                textAlign,
+                {
+                  backgroundColor: theme.inputBg,
+                  borderColor: theme.inputBorder,
+                  color: theme.text,
+                },
+              ]}
             />
-            <View style={styles.filterRow}>
+            <View style={[styles.filterRow, rowDir]}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.inputLabel}>City</Text>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    textAlign,
+                    { color: theme.subText },
+                  ]}
+                >
+                  {t.city}
+                </Text>
                 <TextInput
                   value={newUniCity}
                   onChangeText={setNewUniCity}
-                  style={styles.textInput}
+                  style={[
+                    styles.textInput,
+                    textAlign,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.inputLabel}>Country</Text>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    textAlign,
+                    { color: theme.subText },
+                  ]}
+                >
+                  {t.country}
+                </Text>
                 <TextInput
                   value={newUniCountry}
                   onChangeText={setNewUniCountry}
-                  style={styles.textInput}
+                  style={[
+                    styles.textInput,
+                    textAlign,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
                 />
               </View>
             </View>
-            <View style={styles.filterRow}>
+            <View style={[styles.filterRow, rowDir]}>
               <View style={{ flex: 1 }}>
-                <Text style={styles.inputLabel}>Latitude</Text>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    textAlign,
+                    { color: theme.subText },
+                  ]}
+                >
+                  {t.latitude}
+                </Text>
                 <TextInput
                   value={newUniLat}
                   onChangeText={setNewUniLat}
                   keyboardType="numeric"
-                  style={styles.textInput}
+                  style={[
+                    styles.textInput,
+                    textAlign,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
                 />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.inputLabel}>Longitude</Text>
+                <Text
+                  style={[
+                    styles.inputLabel,
+                    textAlign,
+                    { color: theme.subText },
+                  ]}
+                >
+                  {t.longitude}
+                </Text>
                 <TextInput
                   value={newUniLng}
                   onChangeText={setNewUniLng}
                   keyboardType="numeric"
-                  style={styles.textInput}
+                  style={[
+                    styles.textInput,
+                    textAlign,
+                    {
+                      backgroundColor: theme.inputBg,
+                      borderColor: theme.inputBorder,
+                      color: theme.text,
+                    },
+                  ]}
                 />
               </View>
             </View>
 
-            <View style={[styles.filterRow, { marginTop: 16 }]}>
+            <View style={[styles.filterRow, rowDir, { marginTop: 16 }]}>
               <TouchableOpacity
-                style={[styles.outlineBtn, { flex: 1 }]}
+                style={[
+                  styles.outlineBtn,
+                  { flex: 1, borderColor: theme.inputBorder },
+                ]}
                 onPress={() => setUniModalOpen(false)}
               >
-                <Text style={styles.outlineBtnText}>Cancel</Text>
+                <Text
+                  style={[styles.outlineBtnText, { color: theme.bodyText }]}
+                >
+                  {t.cancel}
+                </Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.primaryBtn, { flex: 1 }]}
                 onPress={handleCreateUniversity}
               >
-                <Text style={styles.primaryBtnText}>Save University</Text>
+                <Text style={styles.primaryBtnText}>{t.saveUni}</Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -2067,61 +3172,64 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#f8fafc',
     paddingTop: Platform.OS === 'android' ? RNStatusBar.currentHeight : 0,
   },
   flex1: { flex: 1 },
   navbar: {
     height: 56,
-    backgroundColor: '#ffffff',
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
-    paddingHorizontal: 16,
-    flexDirection: 'row',
+    paddingHorizontal: 12,
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  brandRow: { alignItems: 'center', gap: 6 },
   brandBadge: {
-    width: 30,
-    height: 30,
+    width: 28,
+    height: 28,
     borderRadius: 8,
     backgroundColor: '#2563eb',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  brandBadgeText: { color: '#fff', fontWeight: '800', fontSize: 16 },
-  brandTitle: { fontSize: 18, fontWeight: '800', color: '#0f172a' },
-  navRight: { flexDirection: 'row', alignItems: 'center' },
-  userRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  rolePill: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
+  brandBadgeText: { color: '#fff', fontWeight: '800', fontSize: 15 },
+  brandTitle: { fontSize: 16, fontWeight: '800' },
+  navRight: { alignItems: 'center', gap: 6 },
+  toggleBtn: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  toggleBtnText: { fontSize: 11, fontWeight: '800' },
+  toggleBtnEmoji: { fontSize: 13 },
+  userRow: { alignItems: 'center', gap: 6 },
+  rolePill: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 999 },
   rolePillStudent: { backgroundColor: '#dbeafe' },
   rolePillLandlord: { backgroundColor: '#fef3c7' },
   rolePillText: { fontSize: 11, fontWeight: '700', color: '#1e293b' },
-  logoutText: { fontSize: 12, fontWeight: '700', color: '#dc2626' },
+  logoutText: { fontSize: 11, fontWeight: '700', color: '#dc2626' },
   loginBtn: {
     backgroundColor: '#2563eb',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
     borderRadius: 8,
   },
-  loginBtnText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  loginBtnText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   sectionPad: { padding: 14 },
   rowBetween: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#64748b',
     letterSpacing: 0.5,
   },
   sectionHeading: {
     fontSize: 15,
     fontWeight: '800',
-    color: '#0f172a',
     marginBottom: 10,
   },
   linkText: { fontSize: 12, fontWeight: '700', color: '#2563eb' },
@@ -2129,22 +3237,18 @@ const styles = StyleSheet.create({
   uniChip: {
     paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#fff',
     borderRadius: 999,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
     marginRight: 8,
   },
   uniChipActive: { backgroundColor: '#2563eb', borderColor: '#2563eb' },
-  uniChipText: { fontSize: 12, fontWeight: '600', color: '#334155' },
+  uniChipText: { fontSize: 12, fontWeight: '600' },
   uniChipTextActive: { color: '#ffffff' },
-  filterRow: { flexDirection: 'row', gap: 10, marginTop: 6 },
+  filterRow: { gap: 10, marginTop: 6 },
   filterBox: { flex: 1 },
-  filterLabel: { fontSize: 11, fontWeight: '600', color: '#475569' },
+  filterLabel: { fontSize: 11, fontWeight: '600' },
   filterInput: {
-    backgroundColor: '#fff',
     borderWidth: 1,
-    borderColor: '#cbd5e1',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 6,
@@ -2155,18 +3259,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 8,
-    backgroundColor: '#e2e8f0',
     marginRight: 6,
   },
-  catChipActive: { backgroundColor: '#0f172a' },
-  catChipText: { fontSize: 11, fontWeight: '600', color: '#475569' },
+  catChipActive: { backgroundColor: '#2563eb' },
+  catChipText: { fontSize: 11, fontWeight: '600' },
   catChipTextActive: { color: '#ffffff' },
   mapContainer: {
     height: 250,
     width: '100%',
     borderTopWidth: 1,
     borderBottomWidth: 1,
-    borderColor: '#e2e8f0',
     overflow: 'hidden',
   },
   map: { width: '100%', height: '100%' },
@@ -2198,10 +3300,8 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   card: {
-    backgroundColor: '#ffffff',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
     marginBottom: 14,
     overflow: 'hidden',
   },
@@ -2217,22 +3317,19 @@ const styles = StyleSheet.create({
   },
   distanceOverlayText: { color: '#fff', fontSize: 11, fontWeight: '700' },
   cardBody: { padding: 14 },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#0f172a' },
-  cardSub: { fontSize: 12, color: '#64748b', marginTop: 2 },
+  cardTitle: { fontSize: 16, fontWeight: '800' },
+  cardSub: { fontSize: 12, marginTop: 2 },
   priceText: { fontSize: 18, fontWeight: '800', color: '#2563eb' },
-  perMoText: { fontSize: 11, color: '#64748b' },
-  commuteRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  perMoText: { fontSize: 11 },
+  commuteRow: { gap: 8, marginTop: 8 },
   commuteBadge: {
     fontSize: 11,
-    backgroundColor: '#f1f5f9',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
-    color: '#334155',
     fontWeight: '600',
   },
   amenityWrap: {
-    flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
     marginTop: 8,
@@ -2245,25 +3342,22 @@ const styles = StyleSheet.create({
   },
   amenityTagText: { fontSize: 11, color: '#1d4ed8', fontWeight: '600' },
   cardFooter: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: 12,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#f1f5f9',
     gap: 8,
   },
   outlineBtn: {
     borderWidth: 1,
-    borderColor: '#cbd5e1',
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  outlineBtnText: { fontSize: 12, fontWeight: '700', color: '#334155' },
+  outlineBtnText: { fontSize: 12, fontWeight: '700' },
   primaryBtnSmall: {
     backgroundColor: '#2563eb',
     paddingHorizontal: 14,
@@ -2280,7 +3374,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   primaryBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
-  detailTitle: { fontSize: 21, fontWeight: '800', color: '#0f172a' },
+  detailTitle: { fontSize: 21, fontWeight: '800' },
   detailHeroImage: {
     width: '100%',
     height: 220,
@@ -2300,37 +3394,32 @@ const styles = StyleSheet.create({
     borderColor: '#2563eb',
   },
   panel: {
-    backgroundColor: '#ffffff',
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
     padding: 14,
     marginTop: 14,
   },
-  panelTitle: { fontSize: 15, fontWeight: '800', color: '#0f172a' },
-  bodyText: { fontSize: 13, color: '#475569', marginTop: 4, lineHeight: 19 },
-  boldText: { fontSize: 13, fontWeight: '700', color: '#0f172a' },
+  panelTitle: { fontSize: 15, fontWeight: '800' },
+  bodyText: { fontSize: 13, marginTop: 4, lineHeight: 19 },
+  boldText: { fontSize: 13, fontWeight: '700' },
   roomTierBox: {
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     padding: 12,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#e2e8f0',
     marginTop: 8,
   },
   roomTierBoxActive: {
     borderColor: '#2563eb',
     backgroundColor: '#eff6ff',
   },
-  roomTierName: { fontSize: 14, fontWeight: '700', color: '#0f172a' },
-  presetRow: { flexDirection: 'row', gap: 8, marginTop: 8 },
+  roomTierName: { fontSize: 14, fontWeight: '700' },
+  presetRow: { gap: 8, marginTop: 8 },
   presetBtn: {
     flex: 1,
     paddingVertical: 8,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
     borderRadius: 8,
     alignItems: 'center',
   },
@@ -2338,20 +3427,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#dbeafe',
     borderColor: '#2563eb',
   },
-  presetBtnText: { fontSize: 12, fontWeight: '700', color: '#475569' },
+  presetBtnText: { fontSize: 12, fontWeight: '700' },
   presetBtnTextActive: { color: '#1d4ed8' },
   calcSummary: {
     marginTop: 12,
     paddingTop: 10,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
     gap: 6,
   },
   calcTotalRow: {
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
   },
   statusBadge: {
     alignSelf: 'flex-start',
@@ -2364,13 +3451,10 @@ const styles = StyleSheet.create({
   inputLabel: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#475569',
     marginTop: 10,
   },
   textInput: {
-    backgroundColor: '#ffffff',
     borderWidth: 1,
-    borderColor: '#cbd5e1',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 8,
@@ -2380,13 +3464,10 @@ const styles = StyleSheet.create({
   streetOption: {
     paddingVertical: 8,
     paddingHorizontal: 10,
-    backgroundColor: '#f8fafc',
     borderBottomWidth: 1,
-    borderBottomColor: '#e2e8f0',
   },
   coordHint: {
     fontSize: 11,
-    color: '#475569',
     marginTop: 6,
     textAlign: 'center',
   },
@@ -2395,27 +3476,22 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
-    backgroundColor: '#ffffff',
   },
   checkboxPillActive: {
     backgroundColor: '#dbeafe',
     borderColor: '#2563eb',
   },
-  checkboxPillText: { fontSize: 11, fontWeight: '600', color: '#334155' },
+  checkboxPillText: { fontSize: 11, fontWeight: '600' },
   checkboxPillTextActive: { color: '#1e40af', fontWeight: '700' },
   photoPreviewBox: {
     width: 110,
     marginRight: 10,
     borderRadius: 10,
     borderWidth: 1,
-    borderColor: '#cbd5e1',
     overflow: 'hidden',
-    backgroundColor: '#fff',
   },
   photoPreviewImg: { width: '100%', height: 70 },
   photoPreviewActions: {
-    flexDirection: 'row',
     justifyContent: 'space-between',
     paddingHorizontal: 6,
     paddingVertical: 4,
@@ -2431,25 +3507,22 @@ const styles = StyleSheet.create({
   },
   bottomTabs: {
     height: 54,
-    backgroundColor: '#ffffff',
     borderTopWidth: 1,
-    borderTopColor: '#e2e8f0',
-    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-around',
   },
   tabItem: { paddingVertical: 8, paddingHorizontal: 16 },
-  tabText: { fontSize: 12, fontWeight: '600', color: '#64748b' },
+  tabText: { fontSize: 12, fontWeight: '600' },
   tabTextActive: { color: '#2563eb', fontWeight: '800' },
   modalBackdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     padding: 16,
   },
   modalCard: {
-    backgroundColor: '#ffffff',
     borderRadius: 16,
+    borderWidth: 1,
     padding: 18,
   },
 });
