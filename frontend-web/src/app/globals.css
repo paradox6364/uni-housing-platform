@@ -4,6 +4,102 @@
 
 @import 'leaflet/dist/leaflet.css';
 
+/* ============================================================
+   ألوان الرمادي — الوضع النهاري (الافتراضي)
+   ============================================================ */
+:root {
+  --slate-50: 248 250 252;
+  --slate-100: 241 245 249;
+  --slate-200: 226 232 240;
+  --slate-300: 203 213 225;
+  --slate-400: 148 163 184;
+  --slate-500: 100 116 139;
+  --slate-600: 71 85 105;
+  --slate-700: 51 65 85;
+  --slate-800: 30 41 59;
+  --slate-900: 15 23 42;
+  --slate-950: 2 6 23;
+  --surface: 255 255 255; /* لون البطاقات والنوافذ (bg-white) */
+}
+
+/* ============================================================
+   ألوان الرمادي — الوضع الليلي (نعكس الدرجات: الفاتح يصير غامق)
+   ============================================================ */
+.dark {
+  --slate-50: 11 18 32;    /* خلفية الصفحة */
+  --slate-100: 22 32 51;   /* الحقول والعناصر الثانوية */
+  --slate-200: 34 48 73;   /* الحدود */
+  --slate-300: 49 65 95;
+  --slate-400: 107 123 149;
+  --slate-500: 148 163 184; /* النص الخافت */
+  --slate-600: 170 183 202;
+  --slate-700: 203 213 225;
+  --slate-800: 226 232 240;
+  --slate-900: 241 245 249; /* النص الأساسي */
+  --slate-950: 248 250 252;
+  --surface: 16 26 46;
+  color-scheme: dark; /* يخلي القوائم والسكرول بار داكنة */
+}
+
+html {
+  transition: background-color 0.2s ease;
+}
+
+/* ارتفاع الشاشة كاملة (dvh يراعي شريط المتصفح على الموبايل) */
+.app-screen {
+  height: 100vh;
+  height: 100dvh;
+}
+body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* ============================================================
+   تعديلات الوضع الليلي على الألوان الجاهزة في الكود
+   (:where تخلي الأولوية منخفضة فتبقى حالات hover شغالة)
+   ============================================================ */
+:where(.dark) .bg-white { background-color: rgb(var(--surface)); }
+:where(.dark) .bg-white\/90 { background-color: rgb(var(--surface) / 0.9); }
+
+/* الشارات الغامقة فوق الصور (نصها أبيض) */
+:where(.dark) :is(.bg-slate-900\/80, .bg-slate-900\/75) { background-color: rgb(2 6 23 / 0.8); }
+:where(.dark) .bg-slate-800 { background-color: rgb(51 65 85); }
+:where(.dark) .hover\:bg-slate-900:hover { background-color: rgb(30 41 59); }
+
+/* لون الموقع الأساسي */
+:where(.dark) :is(.bg-blue-50, .bg-brand-50) { background-color: rgb(99 102 241 / 0.12); }
+:where(.dark) :is(.bg-blue-100, .bg-brand-100) { background-color: rgb(99 102 241 / 0.2); }
+:where(.dark) :is(.text-blue-500, .text-blue-600, .text-blue-700, .text-blue-800, .text-brand-500, .text-brand-600, .text-brand-700, .text-brand-800) { color: rgb(165 180 252); }
+:where(.dark) :is(.hover\:text-blue-600:hover, .hover\:text-brand-500:hover, .hover\:text-brand-600:hover) { color: rgb(199 210 254); }
+:where(.dark) :is(.border-blue-200, .border-blue-300, .border-brand-200, .border-brand-300) { border-color: rgb(99 102 241 / 0.35); }
+
+/* العنبري */
+:where(.dark) :is(.bg-amber-50, .bg-amber-100) { background-color: rgb(245 158 11 / 0.14); }
+:where(.dark) :is(.text-amber-600, .text-amber-700, .text-amber-800, .text-amber-900) { color: rgb(252 211 77); }
+:where(.dark) :is(.border-amber-200, .border-amber-300) { border-color: rgb(245 158 11 / 0.3); }
+
+/* الأحمر */
+:where(.dark) :is(.bg-red-50, .bg-red-100) { background-color: rgb(239 68 68 / 0.14); }
+:where(.dark) :is(.hover\:bg-red-50:hover) { background-color: rgb(239 68 68 / 0.14); }
+:where(.dark) :is(.text-red-500, .text-red-600, .text-red-700, .text-red-800) { color: rgb(252 165 165); }
+:where(.dark) :is(.border-red-200, .border-red-300) { border-color: rgb(239 68 68 / 0.3); }
+
+/* الأخضر */
+:where(.dark) :is(.bg-emerald-50, .bg-emerald-100) { background-color: rgb(16 185 129 / 0.14); }
+:where(.dark) :is(.text-emerald-600, .text-emerald-700, .text-emerald-800) { color: rgb(110 231 183); }
+:where(.dark) :is(.border-emerald-200, .border-emerald-300) { border-color: rgb(16 185 129 / 0.3); }
+
+/* ============================================================
+   الخريطة (Leaflet)
+   ============================================================ */
+.leaflet-container { direction: ltr; }
+[dir="rtl"] .leaflet-popup-content { direction: rtl; text-align: right; }
+
+/* خريطة داكنة: نعكس ألوان الخريطة فقط وليس العلامات */
+.dark .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.9);
+}
+
 .price-pin {
   background: #ffffff;
   color: #1e293b;
@@ -19,10 +115,15 @@
   align-items: center;
   justify-content: center;
 }
+.dark .price-pin {
+  background: #101a2e;
+  color: #e2e8f0;
+  border-color: #31415f;
+}
 .price-pin-active {
-  background: #2563eb !important;
+  background: #4f46e5 !important;
   color: #ffffff !important;
-  border-color: #1e40af !important;
+  border-color: #3730a3 !important;
   transform: scale(1.15);
   z-index: 999 !important;
 }

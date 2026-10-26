@@ -1,22 +1,30 @@
 'use client';
 import { useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import { Map as MapIcon, List as ListIcon } from 'lucide-react';
 import Navbar from '../components/Navbar';
 import FilterBar from '../components/FilterBar';
 import PropertyCard from '../components/PropertyCard';
 import BookingModal from '../components/BookingModal';
 import { fetchUniversities, searchListings } from '../services/api';
+import { useSettings } from '../context/SettingsContext';
+
+function MapLoading() {
+  const { t } = useSettings();
+  return (
+    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 font-medium">
+      {t('home.mapLoading')}
+    </div>
+  );
+}
 
 const MapView = dynamic(() => import('../components/MapView'), {
   ssr: false,
-  loading: () => (
-    <div className="w-full h-full bg-slate-100 flex items-center justify-center text-slate-400 font-medium">
-      Loading Campus Map...
-    </div>
-  ),
+  loading: () => <MapLoading />,
 });
 
 export default function HomePage() {
+  const { t } = useSettings();
   const [universities, setUniversities] = useState([]);
   const [selectedUniId, setSelectedUniId] = useState('');
   const [currentUni, setCurrentUni] = useState(null);
@@ -24,6 +32,8 @@ export default function HomePage() {
   const [hoveredPropertyId, setHoveredPropertyId] = useState(null);
   const [bookingProperty, setBookingProperty] = useState(null);
   const [loading, setLoading] = useState(true);
+  // على الموبايل نعرض إمّا القائمة أو الخريطة (على الشاشات الكبيرة يظهر الاثنان معًا)
+  const [mobileView, setMobileView] = useState('list');
 
   const [maxDistanceKm, setMaxDistanceKm] = useState(10);
   const [maxPrice, setMaxPrice] = useState('');
@@ -56,7 +66,7 @@ export default function HomePage() {
   }, [selectedUniId, maxDistanceKm, maxPrice, category]);
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden">
+    <div className="app-screen flex flex-col overflow-hidden">
       <Navbar />
 
       <FilterBar
@@ -73,13 +83,17 @@ export default function HomePage() {
       />
 
       <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        <div className="w-full lg:w-[55%] xl:w-[52%] h-full overflow-y-auto p-6 space-y-4 bg-slate-50">
+        <div
+          className={`${
+            mobileView === 'map' ? 'hidden' : 'block'
+          } lg:block w-full lg:w-[55%] xl:w-[52%] h-full overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6 space-y-4 bg-slate-50`}
+        >
           <div>
             <h1 className="text-xl font-extrabold text-slate-900">
-              Student Housing near {currentUni?.name || 'Campus'}
+              {t('home.title', { name: currentUni?.name || t('home.campusFallback') })}
             </h1>
             <p className="text-xs text-slate-500">
-              Compare verified rooms, walking distance, and monthly rent—all in one place.
+              {t('home.subtitle')}
             </p>
           </div>
 
@@ -91,8 +105,8 @@ export default function HomePage() {
             </div>
           ) : listings.length === 0 ? (
             <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-              <p className="font-bold text-slate-800 text-lg">No student housing matches those filters</p>
-              <p className="text-sm text-slate-500 mt-1">Try increasing your distance radius or max budget.</p>
+              <p className="font-bold text-slate-800 text-lg">{t('home.emptyTitle')}</p>
+              <p className="text-sm text-slate-500 mt-1">{t('home.emptyHint')}</p>
             </div>
           ) : (
             listings.map((property) => (
@@ -109,7 +123,11 @@ export default function HomePage() {
           )}
         </div>
 
-        <div className="hidden lg:block lg:w-[45%] xl:w-[48%] h-full relative border-l border-slate-200">
+        <div
+          className={`${
+            mobileView === 'map' ? 'block' : 'hidden'
+          } lg:block w-full lg:w-[45%] xl:w-[48%] h-full relative border-s border-slate-200`}
+        >
           <MapView
             university={currentUni}
             listings={listings}
@@ -118,6 +136,16 @@ export default function HomePage() {
           />
         </div>
       </main>
+
+      {/* زر التبديل بين القائمة والخريطة (موبايل وتابلت فقط) */}
+      <button
+        type="button"
+        onClick={() => setMobileView(mobileView === 'map' ? 'list' : 'map')}
+        className="lg:hidden fixed bottom-5 inset-x-0 mx-auto w-fit z-30 inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold px-5 py-3 rounded-full shadow-lg shadow-brand-900/30 transition"
+      >
+        {mobileView === 'map' ? <ListIcon className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
+        {mobileView === 'map' ? t('home.showList') : t('home.showMap')}
+      </button>
 
       {bookingProperty && (
         <BookingModal property={bookingProperty} onClose={() => setBookingProperty(null)} />

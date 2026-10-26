@@ -1,7 +1,9 @@
 /** @type {import('tailwindcss').Config} */
 
+// تحويل متغير CSS إلى لون يفهمه Tailwind (يدعم الشفافية مثل bg-slate-900/80)
 const withAlpha = (variable) => `rgb(var(${variable}) / <alpha-value>)`;
 
+// لون الموقع الأساسي (نيلي عصري). غيّر الأرقام هنا فيتغير لون الموقع كله
 const brand = {
   50: '#eef2ff',
   100: '#e0e7ff',
@@ -16,6 +18,7 @@ const brand = {
   950: '#1e1b4b'
 };
 
+// الرمادي: قيمه في globals.css وتتبدل تلقائيًا بين الوضع النهاري والليلي
 const slate = Object.fromEntries(
   [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map((n) => [n, withAlpha(`--slate-${n}`)])
 );
@@ -30,6 +33,7 @@ module.exports = {
       },
       colors: {
         brand,
+        // أي مكان في الموقع مكتوب فيه blue ياخد لون الموقع الجديد تلقائيًا
         blue: brand,
         slate
       }
