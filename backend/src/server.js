@@ -22,7 +22,12 @@ app.use('/api/universities', universityRoutes);
 app.use('/api/listings', listingRoutes);
 app.use('/api/bookings', bookingRoutes);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`UniHousing Backend running on http://localhost:${PORT}`);
-});
+// Only start a local port listener when not running inside Vercel serverless
+if (!process.env.VERCEL) {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`UniHousing Backend running on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;

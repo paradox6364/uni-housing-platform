@@ -8,6 +8,8 @@ import { useAuth } from '../context/AuthContext';
 import { useSettings } from '../context/SettingsContext';
 import SettingsToggles from './SettingsToggles';
 
+const ROLE_LABELS = { LANDLORD: 'Landlord', STUDENT: 'Student', ADMIN: 'Admin' };
+
 export default function Navbar() {
   const { user, logout, isLandlord, isStudent } = useAuth();
   const { t } = useSettings();
