@@ -62,7 +62,11 @@ exports.searchByUniversity = async (req, res) => {
           prop.longitude
         );
 
-        const commute = estimateCommute(distanceToUniKm);
+        const commute = estimateCommute(
+          distanceToUniKm,
+          prop.walkMins,
+          prop.transitMins
+        );
         const startingPrice =
           prop.rooms.length > 0 ? prop.rooms[0].pricePerMonth : null;
 
@@ -151,7 +155,11 @@ exports.getPropertyById = async (req, res) => {
         return {
           ...uni,
           distanceToUniKm,
-          commute: estimateCommute(distanceToUniKm),
+          commute: estimateCommute(
+            distanceToUniKm,
+            property.walkMins,
+            property.transitMins
+          ),
         };
       })
       .sort((a, b) => a.distanceToUniKm - b.distanceToUniKm);
@@ -160,13 +168,17 @@ exports.getPropertyById = async (req, res) => {
     const startingPrice =
       property.rooms.length > 0 ? property.rooms[0].pricePerMonth : null;
 
+    const defaultCommute = estimateCommute(
+      primaryUniversity ? primaryUniversity.distanceToUniKm : 1.2,
+      property.walkMins,
+      property.transitMins
+    );
+
     return res.json({
       ...property,
       startingPrice,
       distanceToUniKm: primaryUniversity ? primaryUniversity.distanceToUniKm : 1.2,
-      commute: primaryUniversity
-        ? primaryUniversity.commute
-        : { walkMins: 15, transitMins: 6 },
+      commute: primaryUniversity ? primaryUniversity.commute : defaultCommute,
       primaryUniversity,
       nearbyUniversities,
     });
@@ -185,6 +197,8 @@ exports.createProperty = async (req, res) => {
       city,
       latitude,
       longitude,
+      walkMins,
+      transitMins,
       amenities = [],
       images = [],
       landlordId,
@@ -220,6 +234,17 @@ exports.createProperty = async (req, res) => {
       return res.status(400).json({ error: 'No valid landlord account found in database.' });
     }
 
+    const parsedWalkMins =
+      walkMins !== undefined && walkMins !== '' && !Number.isNaN(parseInt(walkMins, 10))
+        ? parseInt(walkMins, 10)
+        : null;
+    const parsedTransitMins =
+      transitMins !== undefined &&
+      transitMins !== '' &&
+      !Number.isNaN(parseInt(transitMins, 10))
+        ? parseInt(transitMins, 10)
+        : null;
+
     const property = await prisma.property.create({
       data: {
         title: title.trim(),
@@ -228,6 +253,8 @@ exports.createProperty = async (req, res) => {
         city: city.trim(),
         latitude: parseFloat(latitude) || 51.5246,
         longitude: parseFloat(longitude) || -0.134,
+        walkMins: parsedWalkMins,
+        transitMins: parsedTransitMins,
         amenities: Array.isArray(amenities) ? amenities : [],
         images: Array.isArray(images) ? images : [],
         landlordId: landlordUser.id,
@@ -266,6 +293,8 @@ exports.updateProperty = async (req, res) => {
       city,
       latitude,
       longitude,
+      walkMins,
+      transitMins,
       amenities,
       images,
       rooms = [],
@@ -286,6 +315,20 @@ exports.updateProperty = async (req, res) => {
       });
     }
 
+    const parsedWalkMins =
+      walkMins === '' || walkMins === null
+        ? null
+        : walkMins !== undefined && !Number.isNaN(parseInt(walkMins, 10))
+        ? parseInt(walkMins, 10)
+        : existingProperty.walkMins;
+
+    const parsedTransitMins =
+      transitMins === '' || transitMins === null
+        ? null
+        : transitMins !== undefined && !Number.isNaN(parseInt(transitMins, 10))
+        ? parseInt(transitMins, 10)
+        : existingProperty.transitMins;
+
     const updatedProperty = await prisma.property.update({
       where: { id },
       data: {
@@ -302,6 +345,8 @@ exports.updateProperty = async (req, res) => {
           longitude !== undefined
             ? parseFloat(longitude)
             : existingProperty.longitude,
+        walkMins: parsedWalkMins,
+        transitMins: parsedTransitMins,
         amenities: Array.isArray(amenities)
           ? amenities
           : existingProperty.amenities,
@@ -309,7 +354,6 @@ exports.updateProperty = async (req, res) => {
       },
     });
 
-    // Update the primary room tier if room data was provided
     if (Array.isArray(rooms) && rooms.length > 0) {
       const r = rooms[0];
       if (existingProperty.rooms.length > 0) {
@@ -375,7 +419,6 @@ exports.deleteProperty = async (req, res) => {
       });
     }
 
-    // Delete related bookings and rooms first so foreign key constraints succeed
     await prisma.$transaction([
       prisma.booking.deleteMany({
         where: {

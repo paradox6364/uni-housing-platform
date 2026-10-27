@@ -51,6 +51,8 @@ model Property {
   city        String
   latitude    Float
   longitude   Float
+  walkMins    Int?
+  transitMins Int?
   amenities   String[]
   images      String[]
   landlordId  String
