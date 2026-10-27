@@ -138,3 +138,34 @@ body {
   box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
   white-space: nowrap;
 }
+
+/* Tell the browser to use dark native popup menus for <select> and <input> */
+html.dark,
+.dark {
+  color-scheme: dark;
+}
+
+/* Dark mode styling for FilterBar selects, options, and price inputs */
+html.dark select,
+.dark select,
+html.dark input:not([type='checkbox']):not([type='radio']):not([type='file']),
+.dark input:not([type='checkbox']):not([type='radio']):not([type='file']) {
+  background-color: #1e293b !important; /* slate-800 */
+  color: #f8fafc !important;            /* slate-50 */
+  border-color: #334155 !important;     /* slate-700 */
+  color-scheme: dark;
+}
+
+/* Opened dropdown list items (<option>) */
+html.dark select option,
+.dark select option,
+html.dark select optgroup,
+.dark select optgroup {
+  background-color: #0f172a !important; /* slate-900 */
+  color: #f8fafc !important;            /* slate-50 */
+}
+
+html.dark input::placeholder,
+.dark input::placeholder {
+  color: #94a3b8 !important;            /* slate-400 */
+}
