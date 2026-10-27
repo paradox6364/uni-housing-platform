@@ -70,7 +70,7 @@ export default function PropertyCard({
               <div className="text-end shrink-0">
                 <span className="text-xs text-slate-400 block">{t('card.from')}</span>
                 <span className="text-lg font-extrabold text-brand-600">
-                  ${property.startingPrice}
+                  £{property.startingPrice}
                 </span>
                 <span className="text-xs text-slate-500"> {t('card.perMonth')}</span>
               </div>

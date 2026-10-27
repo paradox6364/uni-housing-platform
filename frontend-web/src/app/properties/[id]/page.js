@@ -179,7 +179,7 @@ export default function PropertyDetailsPage() {
             <div className="bg-white px-4 py-3 rounded-xl border border-slate-200 shadow-sm flex items-baseline gap-1.5 self-start md:self-auto">
               <span className="text-xs text-slate-400 font-medium">Starting from</span>
               <span className="text-2xl font-extrabold text-blue-600">
-                ${property.startingPrice}
+                £{property.startingPrice}
               </span>
               <span className="text-xs text-slate-500">/ month</span>
             </div>
@@ -357,7 +357,7 @@ export default function PropertyDetailsPage() {
                         <div className="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
                           <div className="text-left sm:text-right">
                             <span className="text-lg font-extrabold text-slate-900">
-                              ${room.pricePerMonth}
+                              £{room.pricePerMonth}
                             </span>
                             <span className="text-xs text-slate-500"> / mo</span>
                           </div>
@@ -448,7 +448,7 @@ export default function PropertyDetailsPage() {
                   >
                     {property.rooms?.map((r) => (
                       <option key={r.id} value={r.id}>
-                        {r.name} — ${r.pricePerMonth}/mo
+                        {r.name} — £{r.pricePerMonth}/mo
                       </option>
                     ))}
                   </select>
@@ -497,7 +497,7 @@ export default function PropertyDetailsPage() {
                   <div className="flex justify-between text-slate-600">
                     <span>Monthly Rent</span>
                     <span className="font-semibold text-slate-900">
-                      ${monthlyRent.toLocaleString()} / mo
+                      £{monthlyRent.toLocaleString()} / mo
                     </span>
                   </div>
 
@@ -506,20 +506,20 @@ export default function PropertyDetailsPage() {
                       Lease Subtotal ({monthlyRent.toLocaleString()} &times; {leaseMonths} mos)
                     </span>
                     <span className="font-semibold text-slate-900">
-                      ${totalRentCost.toLocaleString()}
+                      £{totalRentCost.toLocaleString()}
                     </span>
                   </div>
 
                   <div className="flex justify-between text-slate-600">
                     <span>Refundable Security Deposit (50%)</span>
                     <span className="font-semibold text-slate-900">
-                      ${securityDeposit.toLocaleString()}
+                      £{securityDeposit.toLocaleString()}
                     </span>
                   </div>
 
                   <div className="flex justify-between text-slate-600">
                     <span>Platform Service Fee</span>
-                    <span className="text-emerald-600 font-semibold">$0 (Free)</span>
+                    <span className="text-emerald-600 font-semibold">£0 (Free)</span>
                   </div>
 
                   <div className="pt-3 border-t border-slate-200 flex justify-between items-baseline">
@@ -527,7 +527,7 @@ export default function PropertyDetailsPage() {
                       Total Estimated Lease
                     </span>
                     <span className="text-2xl font-extrabold text-blue-600">
-                      ${grandTotalLeaseCost.toLocaleString()}
+                      £{grandTotalLeaseCost.toLocaleString()}
                     </span>
                   </div>
                 </div>

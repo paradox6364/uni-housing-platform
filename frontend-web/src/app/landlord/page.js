@@ -1066,7 +1066,7 @@ export default function LandlordPortal() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                      Price / Month ($)
+                      Price / Month (£)
                     </label>
                     <input
                       type="number"
@@ -1270,7 +1270,7 @@ export default function LandlordPortal() {
                         </span>
                         {primaryRoom && (
                           <span className="absolute bottom-2.5 right-2.5 bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow">
-                            ${primaryRoom.pricePerMonth}/mo
+                            £{primaryRoom.pricePerMonth}/mo
                           </span>
                         )}
                       </div>
