@@ -14,6 +14,7 @@ import {
   updateBookingStatus,
 } from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 
 const LocationPickerMap = dynamic(
   () => import('../../components/LocationPickerMap'),
@@ -76,6 +77,10 @@ const compressImageFile = (file, maxWidth = 1200, quality = 0.8) => {
 
 export default function LandlordPortal() {
   const { user, loading: authLoading, isLandlord } = useAuth();
+  const settings = useSettings ? useSettings() : {};
+  const isDark = Boolean(
+    settings?.darkMode ?? settings?.isDark ?? settings?.theme === 'dark'
+  );
 
   const [bookings, setBookings] = useState([]);
   const [myProperties, setMyProperties] = useState([]);
@@ -469,9 +474,79 @@ export default function LandlordPortal() {
     new Set([...AMENITY_OPTIONS, ...selectedAmenities])
   );
 
+  const darkScopeStyles = (
+    <style jsx global>{`
+      html.dark .landlord-dark-scope,
+      .landlord-dark-scope.dark {
+        background-color: #020617 !important;
+        color: #f8fafc !important;
+      }
+      html.dark .landlord-dark-scope .bg-white,
+      .landlord-dark-scope.dark .bg-white {
+        background-color: #0f172a !important;
+        color: #f8fafc !important;
+      }
+      html.dark .landlord-dark-scope .bg-slate-50,
+      html.dark .landlord-dark-scope .bg-slate-50\/60,
+      html.dark .landlord-dark-scope .bg-slate-100,
+      .landlord-dark-scope.dark .bg-slate-50,
+      .landlord-dark-scope.dark .bg-slate-50\/60,
+      .landlord-dark-scope.dark .bg-slate-100 {
+        background-color: #1e293b !important;
+      }
+      html.dark .landlord-dark-scope .text-slate-900,
+      html.dark .landlord-dark-scope .text-slate-800,
+      html.dark .landlord-dark-scope .text-slate-700,
+      .landlord-dark-scope.dark .text-slate-900,
+      .landlord-dark-scope.dark .text-slate-800,
+      .landlord-dark-scope.dark .text-slate-700 {
+        color: #f1f5f9 !important;
+      }
+      html.dark .landlord-dark-scope .text-slate-600,
+      html.dark .landlord-dark-scope .text-slate-500,
+      html.dark .landlord-dark-scope .text-slate-400,
+      .landlord-dark-scope.dark .text-slate-600,
+      .landlord-dark-scope.dark .text-slate-500,
+      .landlord-dark-scope.dark .text-slate-400 {
+        color: #94a3b8 !important;
+      }
+      html.dark .landlord-dark-scope .border-slate-100,
+      html.dark .landlord-dark-scope .border-slate-200,
+      html.dark .landlord-dark-scope .border-slate-300,
+      html.dark .landlord-dark-scope hr,
+      .landlord-dark-scope.dark .border-slate-100,
+      .landlord-dark-scope.dark .border-slate-200,
+      .landlord-dark-scope.dark .border-slate-300,
+      .landlord-dark-scope.dark hr {
+        border-color: #334155 !important;
+      }
+      html.dark .landlord-dark-scope input:not([type='checkbox']):not([type='file']),
+      html.dark .landlord-dark-scope select,
+      html.dark .landlord-dark-scope textarea,
+      .landlord-dark-scope.dark input:not([type='checkbox']):not([type='file']),
+      .landlord-dark-scope.dark select,
+      .landlord-dark-scope.dark textarea {
+        background-color: #1e293b !important;
+        border-color: #475569 !important;
+        color: #f8fafc !important;
+      }
+      html.dark .landlord-dark-scope input::placeholder,
+      html.dark .landlord-dark-scope textarea::placeholder,
+      .landlord-dark-scope.dark input::placeholder,
+      .landlord-dark-scope.dark textarea::placeholder {
+        color: #64748b !important;
+      }
+    `}</style>
+  );
+
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div
+        className={`landlord-dark-scope min-h-screen bg-slate-50 dark:bg-slate-950 ${
+          isDark ? 'dark' : ''
+        }`}
+      >
+        {darkScopeStyles}
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 py-12 text-center text-slate-500 dark:text-slate-400">
           Checking account permissions...
@@ -482,7 +557,12 @@ export default function LandlordPortal() {
 
   if (!user || !isLandlord) {
     return (
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div
+        className={`landlord-dark-scope min-h-screen bg-slate-50 dark:bg-slate-950 ${
+          isDark ? 'dark' : ''
+        }`}
+      >
+        {darkScopeStyles}
         <Navbar />
         <div className="max-w-md mx-auto mt-16 p-8 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 text-center">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
@@ -513,7 +593,12 @@ export default function LandlordPortal() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-16">
+    <div
+      className={`landlord-dark-scope min-h-screen bg-slate-50 dark:bg-slate-950 pb-16 ${
+        isDark ? 'dark' : ''
+      }`}
+    >
+      {darkScopeStyles}
       <Navbar />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -533,7 +618,7 @@ export default function LandlordPortal() {
               ({user.email})
             </p>
           </div>
-          <span className="self-start sm:self-auto text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-amber-100 text-amber-800">
+          <span className="self-start sm:self-auto text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-transparent dark:border-amber-800/50">
             Verified Landlord
           </span>
         </div>
@@ -557,7 +642,7 @@ export default function LandlordPortal() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-red-600 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-50 transition"
+                  className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/50 transition"
                 >
                   Cancel Edit
                 </button>
@@ -583,7 +668,7 @@ export default function LandlordPortal() {
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
                       placeholder="e.g., Bloomsbury Student Studios"
-                      className="w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
 
@@ -597,7 +682,7 @@ export default function LandlordPortal() {
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
                       placeholder="London"
-                      className="w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
@@ -612,7 +697,7 @@ export default function LandlordPortal() {
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
                     placeholder="42 Gower Street (or use street search below)"
-                    className="w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
 
@@ -629,7 +714,7 @@ export default function LandlordPortal() {
                       value={walkMins}
                       onChange={(e) => setWalkMins(e.target.value)}
                       placeholder="e.g., 12"
-                      className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
 
@@ -644,7 +729,7 @@ export default function LandlordPortal() {
                       value={transitMins}
                       onChange={(e) => setTransitMins(e.target.value)}
                       placeholder="e.g., 5"
-                      className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
@@ -658,7 +743,7 @@ export default function LandlordPortal() {
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     placeholder="Describe the residence, study spaces, nearby transport, and security..."
-                    className="w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm"
+                    className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
               </div>
@@ -711,10 +796,10 @@ export default function LandlordPortal() {
                         setShowDropdown(true);
                       }}
                       placeholder="Search street, neighborhood, or landmark (e.g., Gower Street, London)..."
-                      className="w-full pl-9 pr-20 py-2.5 text-xs sm:text-sm border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50/60 dark:bg-slate-800 dark:text-white"
+                      className="w-full pl-9 pr-20 py-2.5 text-xs sm:text-sm border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50/60 dark:bg-slate-800 text-slate-900 dark:text-white"
                     />
                     {searchingStreet && (
-                      <span className="absolute right-3 text-[11px] text-blue-600 font-semibold animate-pulse">
+                      <span className="absolute right-3 text-[11px] text-blue-600 dark:text-blue-400 font-semibold animate-pulse">
                         Searching...
                       </span>
                     )}
@@ -726,7 +811,7 @@ export default function LandlordPortal() {
                           setStreetResults([]);
                           setShowDropdown(false);
                         }}
-                        className="absolute right-3 text-xs text-slate-400 hover:text-slate-600 font-semibold"
+                        className="absolute right-3 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold"
                       >
                         Clear
                       </button>
@@ -742,7 +827,7 @@ export default function LandlordPortal() {
                             onClick={() => handleSelectStreetResult(place)}
                             className="w-full text-left px-4 py-2.5 hover:bg-blue-50 dark:hover:bg-slate-700 transition flex items-start gap-2.5"
                           >
-                            <span className="text-blue-600 mt-0.5 shrink-0">
+                            <span className="text-blue-600 dark:text-blue-400 mt-0.5 shrink-0">
                               📍
                             </span>
                             <div className="min-w-0">
@@ -792,7 +877,7 @@ export default function LandlordPortal() {
                     <button
                       type="button"
                       onClick={() => setSelectedAmenities([])}
-                      className="text-[11px] text-slate-400 hover:text-red-600 font-medium"
+                      className="text-[11px] text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-medium"
                     >
                       Clear all
                     </button>
@@ -811,7 +896,7 @@ export default function LandlordPortal() {
                         className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border text-xs font-medium cursor-pointer select-none transition ${
                           isChecked
                             ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-600 text-blue-800 dark:text-blue-200 shadow-sm'
-                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50'
+                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700/70'
                         }`}
                       >
                         <input
@@ -838,12 +923,12 @@ export default function LandlordPortal() {
                       }
                     }}
                     placeholder="Add custom facility (e.g., Rooftop Terrace, Cinema Room)..."
-                    className="flex-1 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg px-3 py-1.5 text-xs"
+                    className="flex-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-1.5 text-xs"
                   />
                   <button
                     type="button"
                     onClick={handleAddCustomAmenity}
-                    className="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-slate-700 dark:text-slate-200 text-xs font-semibold transition shrink-0"
+                    className="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition shrink-0"
                   >
                     + Add Custom
                   </button>
@@ -862,7 +947,7 @@ export default function LandlordPortal() {
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-2 mb-4">
-                  <label className="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition shrink-0">
+                  <label className="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition shrink-0">
                     <span>
                       📷 {uploadingPhotos ? 'Processing...' : 'Upload Photos'}
                     </span>
@@ -882,12 +967,12 @@ export default function LandlordPortal() {
                       value={imageUrlInput}
                       onChange={(e) => setImageUrlInput(e.target.value)}
                       placeholder="Or paste image URL (https://...)"
-                      className="flex-1 border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg px-3 py-2 text-xs"
+                      className="flex-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-xs"
                     />
                     <button
                       type="button"
                       onClick={handleAddImageUrl}
-                      className="px-3.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-900 text-white text-xs font-semibold transition shrink-0"
+                      className="px-3.5 py-2 rounded-lg bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white text-xs font-semibold transition shrink-0"
                     >
                       Add URL
                     </button>
@@ -895,7 +980,7 @@ export default function LandlordPortal() {
                 </div>
 
                 {images.length === 0 ? (
-                  <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 text-center text-xs text-slate-400">
+                  <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 text-center text-xs text-slate-400 dark:text-slate-500">
                     No photos added yet. Upload files or add an image URL above.
                   </div>
                 ) : (
@@ -960,7 +1045,7 @@ export default function LandlordPortal() {
                       required
                       value={roomName}
                       onChange={(e) => setRoomName(e.target.value)}
-                      className="w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
 
@@ -971,7 +1056,7 @@ export default function LandlordPortal() {
                     <select
                       value={roomCategory}
                       onChange={(e) => setRoomCategory(e.target.value)}
-                      className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 dark:text-white"
+                      className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     >
                       <option value="PRIVATE_ROOM">Private Room</option>
                       <option value="ENTIRE_PLACE">Studio / Entire Place</option>
@@ -988,7 +1073,7 @@ export default function LandlordPortal() {
                       required
                       value={pricePerMonth}
                       onChange={(e) => setPricePerMonth(e.target.value)}
-                      className="w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
 
@@ -1001,7 +1086,7 @@ export default function LandlordPortal() {
                       required
                       value={sizeSqm}
                       onChange={(e) => setSizeSqm(e.target.value)}
-                      className="w-full border border-slate-300 dark:border-slate-700 dark:bg-slate-800 dark:text-white rounded-lg px-3 py-2 text-sm"
+                      className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
                 </div>
@@ -1039,8 +1124,8 @@ export default function LandlordPortal() {
                 <div
                   className={`text-sm font-medium p-3 rounded-xl border ${
                     createdMsg.type === 'error'
-                      ? 'bg-red-50 text-red-700 border-red-200'
-                      : 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      ? 'bg-red-50 dark:bg-red-950/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800'
+                      : 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800'
                   }`}
                 >
                   {createdMsg.text}
@@ -1057,7 +1142,7 @@ export default function LandlordPortal() {
               </h2>
               <button
                 onClick={loadBookings}
-                className="text-xs font-semibold text-blue-600 hover:underline"
+                className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
               >
                 Refresh
               </button>
@@ -1077,13 +1162,15 @@ export default function LandlordPortal() {
                     <div>
                       <h3 className="font-bold text-slate-900 dark:text-white text-sm">
                         {b.roomType?.property?.title || 'Property'} —{' '}
-                        <span className="text-blue-600">{b.roomType?.name}</span>
+                        <span className="text-blue-600 dark:text-blue-400">
+                          {b.roomType?.name}
+                        </span>
                       </h3>
                       <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
                         Student: <strong>{b.student?.name}</strong> (
                         {b.student?.email})
                       </p>
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-slate-400 dark:text-slate-400 mt-1">
                         Move-in: {new Date(b.moveInDate).toLocaleDateString()} •{' '}
                         {b.durationMonths} months • $
                         {b.roomType?.pricePerMonth}/mo
@@ -1094,10 +1181,10 @@ export default function LandlordPortal() {
                       <span
                         className={`px-2.5 py-1 rounded-full text-xs font-bold ${
                           b.status === 'APPROVED'
-                            ? 'bg-emerald-100 text-emerald-800'
+                            ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300'
                             : b.status === 'REJECTED'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-amber-100 text-amber-800'
+                            ? 'bg-red-100 dark:bg-red-950/60 text-red-800 dark:text-red-300'
+                            : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
                         }`}
                       >
                         {b.status}
@@ -1141,18 +1228,18 @@ export default function LandlordPortal() {
             <button
               type="button"
               onClick={loadMyProperties}
-              className="text-xs font-semibold text-blue-600 hover:underline"
+              className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
             >
               Refresh List
             </button>
           </div>
 
           {loadingProperties ? (
-            <p className="text-sm text-slate-500 py-8 text-center">
+            <p className="text-sm text-slate-500 dark:text-slate-400 py-8 text-center">
               Loading your properties...
             </p>
           ) : myProperties.length === 0 ? (
-            <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center text-sm text-slate-500">
+            <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center text-sm text-slate-500 dark:text-slate-400">
               You haven&apos;t published any properties yet. Use the form above to create your first listing.
             </div>
           ) : (
@@ -1220,7 +1307,7 @@ export default function LandlordPortal() {
                     <div className="px-4 py-3 bg-slate-50 dark:bg-slate-800/60 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between gap-2">
                       <Link
                         href={`/properties/${prop.id}`}
-                        className="text-xs font-semibold text-blue-600 hover:underline"
+                        className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                       >
                         View Page &rarr;
                       </Link>
@@ -1229,7 +1316,7 @@ export default function LandlordPortal() {
                         <button
                           type="button"
                           onClick={() => handleStartEdit(prop)}
-                          className="px-3 py-1.5 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 text-xs font-semibold transition"
+                          className="px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 hover:bg-amber-200 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-300 text-xs font-semibold transition"
                         >
                           {isBeingEdited ? 'Editing...' : 'Edit'}
                         </button>
@@ -1237,7 +1324,7 @@ export default function LandlordPortal() {
                           type="button"
                           onClick={() => handleDeleteProperty(prop)}
                           disabled={deletingId === prop.id}
-                          className="px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 disabled:opacity-50 text-red-700 text-xs font-semibold transition"
+                          className="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-950/60 hover:bg-red-200 dark:hover:bg-red-900/70 disabled:opacity-50 text-red-700 dark:text-red-300 text-xs font-semibold transition"
                         >
                           {deletingId === prop.id ? 'Deleting...' : 'Delete'}
                         </button>
