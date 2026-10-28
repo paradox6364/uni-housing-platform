@@ -4,15 +4,18 @@
     "slug": "uni-housing-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true
     },
     "android": {
-      "package": "com.unihousing.app"
+      "package": "com.paradox6364.unihousing",
+      "usesCleartextTraffic": true
     },
-    "plugins": [
-      "expo-status-bar"
-    ]
+    "extra": {
+      "eas": {
+        "projectId": "995ac31d-c495-49b3-b461-2c46f305a6bf"
+      }
+    }
   }
 }

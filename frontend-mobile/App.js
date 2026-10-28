@@ -15,12 +15,12 @@ import {
   StatusBar as RNStatusBar,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import MapView, { Marker, Callout } from 'react-native-maps';
+import { WebView } from 'react-native-webview';
 
 const DEFAULT_HOST =
   Platform.OS === 'android' ? 'http://10.0.2.2:5000' : 'http://localhost:5000';
 const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_URL || `https://uni-housing-backend.vercel.app/api`;
+  process.env.EXPO_PUBLIC_API_URL || `${DEFAULT_HOST}/api`;
 
 const DEFAULT_COVER_IMAGE =
   'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=800&q=80';
@@ -265,10 +265,353 @@ const TRANSLATIONS = {
   },
 };
 
+function LeafletMap({
+  mode = 'explore', // 'explore' | 'details' | 'picker'
+  centerLat = 30.0276,
+  centerLng = 31.2101,
+  zoom = 14,
+  darkMode = false,
+  university = null,
+  listings = [],
+  property = null,
+  pickerLat = 51.5246,
+  pickerLng = -0.134,
+  tapToBookText = 'Tap to Book Room →',
+  perMonthText = '/ month',
+  onSelectPropertyBook,
+  onLocationPick,
+}) {
+  const htmlContent = useMemo(() => {
+    const payload = JSON.stringify({
+      mode,
+      centerLat: Number(centerLat) || 30.0276,
+      centerLng: Number(centerLng) || 31.2101,
+      zoom,
+      darkMode: Boolean(darkMode),
+      university,
+      listings: (listings || []).map((p) => ({
+        id: p.id,
+        title: p.title,
+        city: p.city,
+        address: p.address,
+        latitude: Number(p.latitude),
+        longitude: Number(p.longitude),
+        startingPrice:
+          p.startingPrice ?? p.rooms?.[0]?.pricePerMonth ?? 'N/A',
+        distanceToUniKm: p.distanceToUniKm,
+      })),
+      property: property
+        ? {
+            id: property.id,
+            title: property.title,
+            latitude: Number(property.latitude),
+            longitude: Number(property.longitude),
+            startingPrice:
+              property.startingPrice ??
+              property.rooms?.[0]?.pricePerMonth ??
+              'N/A',
+          }
+        : null,
+      pickerLat: Number(pickerLat) || 51.5246,
+      pickerLng: Number(pickerLng) || -0.134,
+      tapToBookText,
+      perMonthText,
+    });
+
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    * { box-sizing: border-box; }
+    html, body, #map {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: ${darkMode ? '#0f172a' : '#f1f5f9'};
+    }
+
+    /* Dark Mode via CSS Filter on OpenStreetMap tiles (No API key required) */
+    body.dark-mode .leaflet-tile-pane {
+      filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+    }
+    body.dark-mode .leaflet-control-zoom a,
+    body.dark-mode .leaflet-control-attribution {
+      background: #1e293b !important;
+      color: #cbd5e1 !important;
+      border-color: #334155 !important;
+    }
+
+    .leaflet-div-icon {
+      background: transparent !important;
+      border: none !important;
+    }
+
+    /* Exact Website University Pin (.uni-pin) */
+    .uni-pin {
+      background: #dc2626;
+      color: #ffffff;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      border: 2px solid #ffffff;
+      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+      white-space: nowrap;
+      width: max-content;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
+    }
+
+    /* Exact Website Property Price Pin (.price-pin) */
+    .price-pin {
+      background: #ffffff;
+      color: #1e293b;
+      font-weight: 700;
+      font-size: 13px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      border: 2px solid #cbd5e1;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+      white-space: nowrap;
+      width: max-content;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transform: translate(-50%, -50%);
+      transition: all 0.2s ease;
+    }
+
+    /* Exact Website Active Pin (.price-pin-active) */
+    .price-pin-active {
+      background: #2563eb !important;
+      color: #ffffff !important;
+      border-color: #1e40af !important;
+      transform: translate(-50%, -50%) scale(1.15);
+      z-index: 999 !important;
+    }
+
+    .leaflet-popup-content-wrapper {
+      border-radius: 12px;
+      background: ${darkMode ? '#1e293b' : '#ffffff'};
+      color: ${darkMode ? '#f8fafc' : '#0f172a'};
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+    }
+    .leaflet-popup-tip {
+      background: ${darkMode ? '#1e293b' : '#ffffff'};
+    }
+    .leaflet-popup-content {
+      margin: 10px 12px;
+    }
+    .popup-title {
+      font-weight: 800;
+      font-size: 13px;
+      color: ${darkMode ? '#f8fafc' : '#0f172a'};
+    }
+    .popup-sub {
+      font-size: 11px;
+      color: ${darkMode ? '#94a3b8' : '#64748b'};
+      margin-top: 2px;
+    }
+    .book-btn {
+      margin-top: 8px;
+      display: inline-block;
+      background: #2563eb;
+      color: #ffffff !important;
+      padding: 6px 10px;
+      border-radius: 8px;
+      font-size: 11px;
+      font-weight: 700;
+      text-decoration: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body class="${darkMode ? 'dark-mode' : ''}">
+  <div id="map"></div>
+  <script>
+    const data = ${payload};
+    const map = L.map('map', { zoomControl: true }).setView([data.centerLat, data.centerLng], data.zoom);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution: '&copy; OpenStreetMap'
+    }).addTo(map);
+
+    function sendMsg(msg) {
+      if (window.ReactNativeWebView && window.ReactNativeWebView.postMessage) {
+        window.ReactNativeWebView.postMessage(JSON.stringify(msg));
+      }
+    }
+
+    function createUniIcon(name) {
+      return L.divIcon({
+        className: '',
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+        popupAnchor: [0, -16],
+        html: '<div class="uni-pin">🎓 ' + (name || 'University') + '</div>'
+      });
+    }
+
+    function createPriceIcon(price, isActive) {
+      return L.divIcon({
+        className: '',
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+        popupAnchor: [0, -16],
+        html: '<div class="price-pin ' + (isActive ? 'price-pin-active' : '') + '">$' + (price || 'N/A') + '</div>'
+      });
+    }
+
+    if (data.mode === 'explore') {
+      if (data.university) {
+        const uniMarker = L.marker(
+          [data.university.latitude, data.university.longitude],
+          { icon: createUniIcon(data.university.name), zIndexOffset: 1000 }
+        ).addTo(map);
+
+        uniMarker.bindPopup(
+          '<div>' +
+            '<div class="popup-title">🎓 ' + data.university.name + '</div>' +
+            '<div class="popup-sub">' + (data.university.city || '') + (data.university.country ? ', ' + data.university.country : '') + '</div>' +
+          '</div>'
+        );
+      }
+
+      const markers = [];
+      (data.listings || []).forEach(function(prop) {
+        const marker = L.marker(
+          [prop.latitude, prop.longitude],
+          { icon: createPriceIcon(prop.startingPrice, false) }
+        ).addTo(map);
+
+        marker.on('click', function() {
+          markers.forEach(function(m) {
+            m.instance.setIcon(createPriceIcon(m.price, false));
+          });
+          marker.setIcon(createPriceIcon(prop.startingPrice, true));
+        });
+
+        marker.on('popupclose', function() {
+          marker.setIcon(createPriceIcon(prop.startingPrice, false));
+        });
+
+        const popupHtml =
+          '<div style="min-width:145px">' +
+            '<div class="popup-title">' + prop.title + '</div>' +
+            '<div class="popup-sub">' +
+              (prop.distanceToUniKm !== undefined ? prop.distanceToUniKm + ' km • ' : '') +
+              '$' + (prop.startingPrice || 'N/A') + data.perMonthText +
+            '</div>' +
+            '<div class="book-btn" onclick="window.bookProp(\\'' + prop.id + '\\')">' + data.tapToBookText + '</div>' +
+          '</div>';
+        marker.bindPopup(popupHtml);
+
+        markers.push({ instance: marker, price: prop.startingPrice });
+      });
+
+      window.bookProp = function(propId) {
+        sendMsg({ type: 'BOOK_PROPERTY', propertyId: propId });
+      };
+    }
+
+    if (data.mode === 'details' && data.property) {
+      L.marker(
+        [data.property.latitude, data.property.longitude],
+        { icon: createPriceIcon(data.property.startingPrice, true), zIndexOffset: 900 }
+      ).addTo(map).bindPopup('<div class="popup-title">' + data.property.title + '</div>');
+
+      if (data.university) {
+        L.marker(
+          [data.university.latitude, data.university.longitude],
+          { icon: createUniIcon(data.university.name), zIndexOffset: 1000 }
+        ).addTo(map);
+      }
+    }
+
+    if (data.mode === 'picker') {
+      const pickerIcon = L.divIcon({
+        className: '',
+        iconSize: [0, 0],
+        iconAnchor: [0, 0],
+        html: '<div class="price-pin price-pin-active" style="white-space: nowrap;">📍 Property Pin</div>'
+      });
+
+      const pinMarker = L.marker([data.pickerLat, data.pickerLng], {
+        icon: pickerIcon,
+        draggable: true
+      }).addTo(map);
+
+      pinMarker.on('dragend', function(e) {
+        const pos = e.target.getLatLng();
+        sendMsg({ type: 'PICK_LOCATION', latitude: pos.lat, longitude: pos.lng });
+      });
+
+      map.on('click', function(e) {
+        pinMarker.setLatLng(e.latlng);
+        sendMsg({ type: 'PICK_LOCATION', latitude: e.latlng.lat, longitude: e.latlng.lng });
+      });
+    }
+  </script>
+</body>
+</html>`;
+  }, [
+    mode,
+    centerLat,
+    centerLng,
+    zoom,
+    darkMode,
+    university,
+    listings,
+    property,
+    pickerLat,
+    pickerLng,
+    tapToBookText,
+    perMonthText,
+  ]);
+
+  return (
+    <WebView
+      originWhitelist={['*']}
+      source={{
+        html: htmlContent,
+        baseUrl: 'https://uni-housing-platform.vercel.app',
+      }}
+      userAgent="UniHousingMobile/1.0 (https://uni-housing-platform.vercel.app)"
+      style={styles.map}
+      nestedScrollEnabled={true}
+      javaScriptEnabled={true}
+      domStorageEnabled={true}
+      onMessage={(event) => {
+        try {
+          const msg = JSON.parse(event.nativeEvent.data);
+          if (msg.type === 'BOOK_PROPERTY' && onSelectPropertyBook) {
+            onSelectPropertyBook(msg.propertyId);
+          } else if (msg.type === 'PICK_LOCATION' && onLocationPick) {
+            onLocationPick(
+              Number(Number(msg.latitude).toFixed(6)),
+              Number(Number(msg.longitude).toFixed(6))
+            );
+          }
+        } catch (err) {
+          console.warn('Map message parse error:', err);
+        }
+      }}
+    />
+  );
+}
+
 export default function App() {
-  // --- THEME & LANGUAGE STATE ---
   const [darkMode, setDarkMode] = useState(false);
-  const [lang, setLang] = useState('en'); // 'en' | 'ar'
+  const [lang, setLang] = useState('en');
   const t = TRANSLATIONS[lang];
   const isRTL = lang === 'ar';
 
@@ -297,13 +640,11 @@ export default function App() {
     [t]
   );
 
-  // --- AUTH STATE ---
   const [token, setToken] = useState(null);
   const [user, setUser] = useState(null);
   const [activeTab, setActiveTab] = useState('EXPLORE');
   const [authMode, setAuthMode] = useState('LOGIN');
 
-  // Auth Form State
   const [authName, setAuthName] = useState('');
   const [authEmail, setAuthEmail] = useState('');
   const [authPhone, setAuthPhone] = useState('');
@@ -312,7 +653,6 @@ export default function App() {
   const [authError, setAuthError] = useState('');
   const [authLoading, setAuthLoading] = useState(false);
 
-  // --- EXPLORE & FILTER STATE ---
   const [universities, setUniversities] = useState([]);
   const [selectedUni, setSelectedUni] = useState(null);
   const [listings, setListings] = useState([]);
@@ -320,9 +660,7 @@ export default function App() {
   const [maxDistanceKm, setMaxDistanceKm] = useState('15');
   const [maxPrice, setMaxPrice] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('');
-  const exploreMapRef = useRef(null);
 
-  // --- DEDICATED PROPERTY DETAILS STATE ---
   const [selectedProperty, setSelectedProperty] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [activePhotoIdx, setActivePhotoIdx] = useState(0);
@@ -330,7 +668,6 @@ export default function App() {
   const [calcRoomId, setCalcRoomId] = useState('');
   const [calcMonths, setCalcMonths] = useState(9);
 
-  // --- BOOKING MODAL STATE ---
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   const [bookingProperty, setBookingProperty] = useState(null);
   const [bookingRoomId, setBookingRoomId] = useState('');
@@ -340,10 +677,8 @@ export default function App() {
   const [durationMonths, setDurationMonths] = useState('9');
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
 
-  // --- STUDENT DASHBOARD STATE ---
   const [studentBookings, setStudentBookings] = useState([]);
 
-  // --- LANDLORD PORTAL STATE (Single Room Tier) ---
   const [landlordBookings, setLandlordBookings] = useState([]);
   const [myProperties, setMyProperties] = useState([]);
   const [editingPropertyId, setEditingPropertyId] = useState(null);
@@ -363,14 +698,11 @@ export default function App() {
   const [sizeSqm, setSizeSqm] = useState('18');
   const [savingProperty, setSavingProperty] = useState(false);
 
-  // Street Search Autocomplete (Landlord Map Picker)
   const [streetQuery, setStreetQuery] = useState('');
   const [streetResults, setStreetResults] = useState([]);
   const [searchingStreet, setSearchingStreet] = useState(false);
-  const landlordMapRef = useRef(null);
   const landlordScrollRef = useRef(null);
 
-  // --- ADD UNIVERSITY MODAL STATE ---
   const [uniModalOpen, setUniModalOpen] = useState(false);
   const [uniSearchQuery, setUniSearchQuery] = useState('');
   const [uniSearchResults, setUniSearchResults] = useState([]);
@@ -429,17 +761,6 @@ export default function App() {
   useEffect(() => {
     if (selectedUni) {
       loadListings(selectedUni);
-      if (exploreMapRef.current) {
-        exploreMapRef.current.animateToRegion(
-          {
-            latitude: selectedUni.latitude,
-            longitude: selectedUni.longitude,
-            latitudeDelta: 0.04,
-            longitudeDelta: 0.04,
-          },
-          800
-        );
-      }
     }
   }, [selectedUni, maxDistanceKm, maxPrice, categoryFilter]);
 
@@ -678,18 +999,6 @@ export default function App() {
     setPropLng(lng);
     setStreetQuery(place.display_name);
     setStreetResults([]);
-
-    if (landlordMapRef.current) {
-      landlordMapRef.current.animateToRegion(
-        {
-          latitude: lat,
-          longitude: lng,
-          latitudeDelta: 0.006,
-          longitudeDelta: 0.006,
-        },
-        800
-      );
-    }
   };
 
   const handlePickImageFromDevice = async () => {
@@ -952,7 +1261,6 @@ export default function App() {
         </TouchableOpacity>
 
         <View style={[styles.navRight, rowDir]}>
-          {/* Language Switcher Button (EN / عربي) */}
           <TouchableOpacity
             onPress={() => setLang((prev) => (prev === 'en' ? 'ar' : 'en'))}
             style={[
@@ -968,7 +1276,6 @@ export default function App() {
             </Text>
           </TouchableOpacity>
 
-          {/* Dark Mode Toggle Button (🌙 / ☀️) */}
           <TouchableOpacity
             onPress={() => setDarkMode((prev) => !prev)}
             style={[
@@ -1155,64 +1462,25 @@ export default function App() {
             </ScrollView>
           </View>
 
-          {/* Interactive Campus & Property Map */}
+          {/* Interactive OpenStreetMap Campus & Property Map */}
           <View
             style={[styles.mapContainer, { borderColor: theme.border }]}
           >
-            <MapView
-              ref={exploreMapRef}
-              style={styles.map}
-              userInterfaceStyle={darkMode ? 'dark' : 'light'}
-              initialRegion={{
-                latitude: selectedUni?.latitude || 30.0276,
-                longitude: selectedUni?.longitude || 31.2101,
-                latitudeDelta: 0.04,
-                longitudeDelta: 0.04,
+            <LeafletMap
+              mode="explore"
+              centerLat={selectedUni?.latitude || 30.0276}
+              centerLng={selectedUni?.longitude || 31.2101}
+              zoom={14}
+              darkMode={darkMode}
+              university={selectedUni}
+              listings={listings}
+              tapToBookText={t.tapToBook}
+              perMonthText={t.perMonth}
+              onSelectPropertyBook={(propId) => {
+                const found = listings.find((item) => item.id === propId);
+                if (found) openQuickBookingModal(found);
               }}
-            >
-              {selectedUni && (
-                <Marker
-                  coordinate={{
-                    latitude: selectedUni.latitude,
-                    longitude: selectedUni.longitude,
-                  }}
-                  title={selectedUni.name}
-                  description={`${selectedUni.city}, ${selectedUni.country}`}
-                >
-                  <View style={styles.uniMarkerBadge}>
-                    <Text style={styles.uniMarkerText}>
-                      🎓 {selectedUni.name}
-                    </Text>
-                  </View>
-                </Marker>
-              )}
-
-              {listings.map((prop) => (
-                <Marker
-                  key={prop.id}
-                  coordinate={{
-                    latitude: prop.latitude,
-                    longitude: prop.longitude,
-                  }}
-                >
-                  <View style={styles.priceMarkerBadge}>
-                    <Text style={styles.priceMarkerText}>
-                      ${prop.startingPrice || 'N/A'}
-                    </Text>
-                  </View>
-                  <Callout onPress={() => openQuickBookingModal(prop)}>
-                    <View style={styles.calloutBox}>
-                      <Text style={styles.calloutTitle}>{prop.title}</Text>
-                      <Text style={styles.calloutSub}>
-                        {prop.distanceToUniKm} km • ${prop.startingPrice}
-                        {t.perMonth}
-                      </Text>
-                      <Text style={styles.calloutAction}>{t.tapToBook}</Text>
-                    </View>
-                  </Callout>
-                </Marker>
-              ))}
-            </MapView>
+            />
           </View>
 
           {/* Listings List */}
@@ -1231,77 +1499,88 @@ export default function App() {
                   }`}
             </Text>
 
-            {listings.map((prop) => (
-              <View
-                key={prop.id}
-                style={[
-                  styles.card,
-                  {
-                    backgroundColor: theme.card,
-                    borderColor: theme.border,
-                  },
-                ]}
-              >
-                <TouchableOpacity onPress={() => openPropertyDetails(prop)}>
-                  <Image
-                    source={{
-                      uri: prop.images?.[0] || DEFAULT_COVER_IMAGE,
-                    }}
-                    style={styles.cardImage}
-                  />
-                  {prop.distanceToUniKm !== undefined && (
-                    <View style={styles.distanceOverlay}>
-                      <Text style={styles.distanceOverlayText}>
-                        {prop.distanceToUniKm} {t.kmFromCampus}
-                      </Text>
-                    </View>
-                  )}
-                </TouchableOpacity>
+            {listings.map((prop) => {
+              const walkTime =
+                prop.commute?.walkMins ??
+                prop.commute?.walkMinutes ??
+                prop.walkMins ??
+                10;
+              const transitTime =
+                prop.commute?.transitMins ??
+                prop.commute?.transitMinutes ??
+                prop.transitMins ??
+                5;
 
-                <View style={styles.cardBody}>
-                  <View style={[styles.rowBetween, rowDir]}>
-                    <TouchableOpacity
-                      style={{ flex: 1 }}
-                      onPress={() => openPropertyDetails(prop)}
-                    >
-                      <Text
-                        style={[
-                          styles.cardTitle,
-                          textAlign,
-                          { color: theme.text },
-                        ]}
-                      >
-                        {prop.title}
-                      </Text>
-                      <Text
-                        style={[
-                          styles.cardSub,
-                          textAlign,
-                          { color: theme.subText },
-                        ]}
-                      >
-                        {prop.address}, {prop.city}
-                      </Text>
-                    </TouchableOpacity>
-                    {prop.startingPrice && (
-                      <View
-                        style={{
-                          alignItems: isRTL ? 'flex-start' : 'flex-end',
-                        }}
-                      >
-                        <Text style={styles.priceText}>
-                          ${prop.startingPrice}
-                        </Text>
-                        <Text
-                          style={[styles.perMoText, { color: theme.subText }]}
-                        >
-                          {t.perMonth}
+              return (
+                <View
+                  key={prop.id}
+                  style={[
+                    styles.card,
+                    {
+                      backgroundColor: theme.card,
+                      borderColor: theme.border,
+                    },
+                  ]}
+                >
+                  <TouchableOpacity onPress={() => openPropertyDetails(prop)}>
+                    <Image
+                      source={{
+                        uri: prop.images?.[0] || DEFAULT_COVER_IMAGE,
+                      }}
+                      style={styles.cardImage}
+                    />
+                    {prop.distanceToUniKm !== undefined && (
+                      <View style={styles.distanceOverlay}>
+                        <Text style={styles.distanceOverlayText}>
+                          {prop.distanceToUniKm} {t.kmFromCampus}
                         </Text>
                       </View>
                     )}
-                  </View>
+                  </TouchableOpacity>
 
-                  {prop.commute && (
+                  <View style={styles.cardBody}>
+                    <View style={[styles.rowBetween, rowDir]}>
+                      <TouchableOpacity
+                        style={{ flex: 1 }}
+                        onPress={() => openPropertyDetails(prop)}
+                      >
+                        <Text
+                          style={[
+                            styles.cardTitle,
+                            textAlign,
+                            { color: theme.text },
+                          ]}
+                        >
+                          {prop.title}
+                        </Text>
+                        <Text
+                          style={[
+                            styles.cardSub,
+                            textAlign,
+                            { color: theme.subText },
+                          ]}
+                        >
+                          {prop.address}, {prop.city}
+                        </Text>
+                      </TouchableOpacity>
+                      {prop.startingPrice && (
+                        <View
+                          style={{
+                            alignItems: isRTL ? 'flex-start' : 'flex-end',
+                          }}
+                        >
+                          <Text style={styles.priceText}>
+                            ${prop.startingPrice}
+                          </Text>
+                          <Text
+                            style={[styles.perMoText, { color: theme.subText }]}
+                          >
+                            {t.perMonth}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+
                     <View style={[styles.commuteRow, rowDir]}>
                       <Text
                         style={[
@@ -1312,7 +1591,7 @@ export default function App() {
                           },
                         ]}
                       >
-                        🚶 {prop.commute.walkMins}
+                        🚶 {walkTime}
                         {t.walk}
                       </Text>
                       <Text
@@ -1324,55 +1603,55 @@ export default function App() {
                           },
                         ]}
                       >
-                        🚇 {prop.commute.transitMins}
+                        🚇 {transitTime}
                         {t.transit}
                       </Text>
                     </View>
-                  )}
 
-                  {prop.amenities?.length > 0 && (
-                    <View style={[styles.amenityWrap, rowDir]}>
-                      {prop.amenities.slice(0, 4).map((am, i) => (
-                        <View key={i} style={styles.amenityTag}>
-                          <Text style={styles.amenityTagText}>{am}</Text>
-                        </View>
-                      ))}
-                    </View>
-                  )}
+                    {prop.amenities?.length > 0 && (
+                      <View style={[styles.amenityWrap, rowDir]}>
+                        {prop.amenities.slice(0, 4).map((am, i) => (
+                          <View key={i} style={styles.amenityTag}>
+                            <Text style={styles.amenityTagText}>{am}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    )}
 
-                  <View
-                    style={[
-                      styles.cardFooter,
-                      rowDir,
-                      { borderTopColor: theme.border },
-                    ]}
-                  >
-                    <TouchableOpacity
+                    <View
                       style={[
-                        styles.outlineBtn,
-                        { borderColor: theme.inputBorder },
+                        styles.cardFooter,
+                        rowDir,
+                        { borderTopColor: theme.border },
                       ]}
-                      onPress={() => openPropertyDetails(prop)}
                     >
-                      <Text
+                      <TouchableOpacity
                         style={[
-                          styles.outlineBtnText,
-                          { color: theme.bodyText },
+                          styles.outlineBtn,
+                          { borderColor: theme.inputBorder },
                         ]}
+                        onPress={() => openPropertyDetails(prop)}
                       >
-                        {t.viewDetails}
-                      </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={styles.primaryBtnSmall}
-                      onPress={() => openQuickBookingModal(prop)}
-                    >
-                      <Text style={styles.primaryBtnText}>{t.bookRoom}</Text>
-                    </TouchableOpacity>
+                        <Text
+                          style={[
+                            styles.outlineBtnText,
+                            { color: theme.bodyText },
+                          ]}
+                        >
+                          {t.viewDetails}
+                        </Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.primaryBtnSmall}
+                        onPress={() => openQuickBookingModal(prop)}
+                      >
+                        <Text style={styles.primaryBtnText}>{t.bookRoom}</Text>
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 </View>
-              </View>
-            ))}
+              );
+            })}
           </View>
         </ScrollView>
       )}
@@ -1438,7 +1717,6 @@ export default function App() {
               </ScrollView>
             )}
 
-            {/* About & Landlord Checked Amenities */}
             <View
               style={[
                 styles.panel,
@@ -1478,7 +1756,6 @@ export default function App() {
               )}
             </View>
 
-            {/* Breakdown of Room Tiers */}
             <View
               style={[
                 styles.panel,
@@ -1580,7 +1857,6 @@ export default function App() {
               })}
             </View>
 
-            {/* Total Lease Cost Calculator */}
             <View
               style={[
                 styles.panel,
@@ -1691,7 +1967,6 @@ export default function App() {
               </TouchableOpacity>
             </View>
 
-            {/* Neighborhood Map */}
             <View
               style={[
                 styles.panel,
@@ -1709,34 +1984,15 @@ export default function App() {
                   { height: 220, marginTop: 8, borderColor: theme.border },
                 ]}
               >
-                <MapView
-                  style={styles.map}
-                  userInterfaceStyle={darkMode ? 'dark' : 'light'}
-                  initialRegion={{
-                    latitude: selectedProperty.latitude,
-                    longitude: selectedProperty.longitude,
-                    latitudeDelta: 0.02,
-                    longitudeDelta: 0.02,
-                  }}
-                >
-                  <Marker
-                    coordinate={{
-                      latitude: selectedProperty.latitude,
-                      longitude: selectedProperty.longitude,
-                    }}
-                    title={selectedProperty.title}
-                  />
-                  {selectedProperty.primaryUniversity && (
-                    <Marker
-                      coordinate={{
-                        latitude: selectedProperty.primaryUniversity.latitude,
-                        longitude: selectedProperty.primaryUniversity.longitude,
-                      }}
-                      title={selectedProperty.primaryUniversity.name}
-                      pinColor="blue"
-                    />
-                  )}
-                </MapView>
+                <LeafletMap
+                  mode="details"
+                  centerLat={selectedProperty.latitude}
+                  centerLng={selectedProperty.longitude}
+                  zoom={15}
+                  darkMode={darkMode}
+                  property={selectedProperty}
+                  university={selectedProperty.primaryUniversity || selectedUni}
+                />
               </View>
             </View>
           </View>
@@ -1932,7 +2188,6 @@ export default function App() {
                 multiline
               />
 
-              {/* Street Search Autocomplete + Interactive Map Location Picker */}
               <Text
                 style={[
                   styles.sectionLabel,
@@ -1999,39 +2254,24 @@ export default function App() {
                   { height: 220, marginTop: 8, borderColor: theme.border },
                 ]}
               >
-                <MapView
-                  ref={landlordMapRef}
-                  style={styles.map}
-                  userInterfaceStyle={darkMode ? 'dark' : 'light'}
-                  initialRegion={{
-                    latitude: propLat,
-                    longitude: propLng,
-                    latitudeDelta: 0.02,
-                    longitudeDelta: 0.02,
+                <LeafletMap
+                  mode="picker"
+                  centerLat={propLat}
+                  centerLng={propLng}
+                  pickerLat={propLat}
+                  pickerLng={propLng}
+                  zoom={16}
+                  darkMode={darkMode}
+                  onLocationPick={(lat, lng) => {
+                    setPropLat(lat);
+                    setPropLng(lng);
                   }}
-                  onPress={(e) => {
-                    const { latitude, longitude } = e.nativeEvent.coordinate;
-                    setPropLat(Number(latitude.toFixed(6)));
-                    setPropLng(Number(longitude.toFixed(6)));
-                  }}
-                >
-                  <Marker
-                    draggable
-                    coordinate={{ latitude: propLat, longitude: propLng }}
-                    onDragEnd={(e) => {
-                      const { latitude, longitude } = e.nativeEvent.coordinate;
-                      setPropLat(Number(latitude.toFixed(6)));
-                      setPropLng(Number(longitude.toFixed(6)));
-                    }}
-                    title="Property Pin"
-                  />
-                </MapView>
+                />
               </View>
               <Text style={[styles.coordHint, { color: theme.subText }]}>
                 {t.tapMapHint} ({propLat.toFixed(4)}, {propLng.toFixed(4)})
               </Text>
 
-              {/* Amenities & Facilities Checkboxes */}
               <Text
                 style={[
                   styles.sectionLabel,
@@ -2117,7 +2357,6 @@ export default function App() {
                 </TouchableOpacity>
               </View>
 
-              {/* Property Photos Manager */}
               <Text
                 style={[
                   styles.sectionLabel,
@@ -2219,7 +2458,6 @@ export default function App() {
                 ))}
               </ScrollView>
 
-              {/* Primary Room Configuration */}
               <Text
                 style={[
                   styles.sectionLabel,
@@ -2337,7 +2575,6 @@ export default function App() {
               </TouchableOpacity>
             </View>
 
-            {/* My Listed Properties Section */}
             <View
               style={[
                 styles.panel,
@@ -2423,7 +2660,6 @@ export default function App() {
               )}
             </View>
 
-            {/* Incoming Student Bookings Section */}
             <View
               style={[
                 styles.panel,
@@ -3272,33 +3508,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   map: { width: '100%', height: '100%' },
-  uniMarkerBadge: {
-    backgroundColor: '#0f172a',
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#ffffff',
-  },
-  uniMarkerText: { color: '#ffffff', fontSize: 11, fontWeight: '800' },
-  priceMarkerBadge: {
-    backgroundColor: '#2563eb',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 999,
-    borderWidth: 2,
-    borderColor: '#ffffff',
-  },
-  priceMarkerText: { color: '#ffffff', fontSize: 11, fontWeight: '800' },
-  calloutBox: { width: 170, padding: 4 },
-  calloutTitle: { fontSize: 12, fontWeight: '800', color: '#0f172a' },
-  calloutSub: { fontSize: 11, color: '#475569', marginTop: 2 },
-  calloutAction: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#2563eb',
-    marginTop: 4,
-  },
   card: {
     borderRadius: 16,
     borderWidth: 1,
