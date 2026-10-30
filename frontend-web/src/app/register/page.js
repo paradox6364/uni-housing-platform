@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 
 export default function RegisterPage() {
   const { register } = useAuth();
+  const { t } = useSettings();
   const router = useRouter();
 
   const [formData, setFormData] = useState({
@@ -33,7 +35,7 @@ export default function RegisterPage() {
         router.push('/');
       }
     } catch (err) {
-      setError(err.message || 'Could not create account');
+      setError(err.message || t('register.errorDefault'));
     } finally {
       setSubmitting(false);
     }
@@ -44,9 +46,11 @@ export default function RegisterPage() {
       <Navbar />
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Create an Account</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            {t('register.title')}
+          </h1>
           <p className="text-sm text-slate-500 mb-6">
-            Choose your account type to get started on UniHousing.
+            {t('register.subtitle')}
           </p>
 
           {error && (
@@ -66,7 +70,7 @@ export default function RegisterPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              🎓 I am a Student
+              {t('register.roleStudent')}
             </button>
             <button
               type="button"
@@ -77,55 +81,59 @@ export default function RegisterPage() {
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              🏢 I am a Landlord
+              {t('register.roleLandlord')}
             </button>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Full Name
+                {t('register.fullNameLabel')}
               </label>
               <input
                 type="text"
                 required
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder={formData.role === 'LANDLORD' ? 'Property Management Co.' : 'Samir Mohamed'}
+                placeholder={
+                  formData.role === 'LANDLORD'
+                    ? t('register.namePlaceholderLandlord')
+                    : t('register.namePlaceholderStudent')
+                }
                 className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Email Address
+                {t('register.emailLabel')}
               </label>
               <input
                 type="email"
                 required
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="you@example.com"
+                placeholder={t('register.emailPlaceholder')}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Phone Number
+                {t('register.phoneLabel')}
               </label>
               <input
                 type="tel"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+20 100 000 0000"
+                placeholder={t('register.phonePlaceholder')}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Password
+                {t('register.passwordLabel')}
               </label>
               <input
                 type="password"
@@ -133,7 +141,7 @@ export default function RegisterPage() {
                 minLength={6}
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                placeholder="At least 6 characters"
+                placeholder={t('register.passwordPlaceholder')}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
               />
             </div>
@@ -144,15 +152,17 @@ export default function RegisterPage() {
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-2.5 rounded-lg transition text-sm"
             >
               {submitting
-                ? 'Creating Account...'
-                : `Sign Up as ${formData.role === 'LANDLORD' ? 'Landlord' : 'Student'}`}
+                ? t('register.creatingAccount')
+                : formData.role === 'LANDLORD'
+                ? t('register.submitLandlord')
+                : t('register.submitStudent')}
             </button>
           </form>
 
           <p className="text-center text-sm text-slate-600 mt-6">
-            Already have an account?{' '}
+            {t('register.hasAccount')}{' '}
             <Link href="/login" className="text-blue-600 font-semibold hover:underline">
-              Log in
+              {t('register.logIn')}
             </Link>
           </p>
         </div>
