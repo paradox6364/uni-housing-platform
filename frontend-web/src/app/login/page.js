@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
+import { useSettings } from '../../context/SettingsContext';
 
 export default function LoginPage() {
   const { login } = useAuth();
+  const { t } = useSettings();
   const router = useRouter();
 
   const [email, setEmail] = useState('');
@@ -28,7 +30,7 @@ export default function LoginPage() {
         router.push('/');
       }
     } catch (err) {
-      setError(err.message || 'Invalid login credentials');
+      setError(err.message || t('login.invalidCredentials'));
     } finally {
       setSubmitting(false);
     }
@@ -49,9 +51,11 @@ export default function LoginPage() {
       <Navbar />
       <div className="flex-1 flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-          <h1 className="text-2xl font-bold text-slate-900 mb-2">Welcome Back</h1>
+          <h1 className="text-2xl font-bold text-slate-900 mb-2">
+            {t('login.title')}
+          </h1>
           <p className="text-sm text-slate-500 mb-6">
-            Sign in to your Student or Landlord UniHousing account.
+            {t('login.subtitle')}
           </p>
 
           {error && (
@@ -63,21 +67,21 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Email Address
+                {t('login.emailLabel')}
               </label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@university.edu"
+                placeholder={t('login.emailPlaceholder')}
                 className="w-full px-3.5 py-2.5 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:outline-none text-sm"
               />
             </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">
-                Password
+                {t('login.passwordLabel')}
               </label>
               <input
                 type="password"
@@ -94,13 +98,13 @@ export default function LoginPage() {
               disabled={submitting}
               className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-semibold py-2.5 rounded-lg transition text-sm"
             >
-              {submitting ? 'Signing in...' : 'Sign In'}
+              {submitting ? t('login.signingIn') : t('login.submit')}
             </button>
           </form>
 
           <div className="mt-6 pt-6 border-t border-slate-200">
             <p className="text-xs font-medium text-slate-400 uppercase tracking-wider mb-3 text-center">
-              Quick Demo Credentials
+              {t('login.demoTitle')}
             </p>
             <div className="grid grid-cols-2 gap-3">
               <button
@@ -108,22 +112,22 @@ export default function LoginPage() {
                 onClick={() => fillDemoAccount('STUDENT')}
                 className="text-xs py-2 px-3 rounded-lg border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 font-medium transition"
               >
-                Fill Student Demo
+                {t('login.fillStudentDemo')}
               </button>
               <button
                 type="button"
                 onClick={() => fillDemoAccount('LANDLORD')}
                 className="text-xs py-2 px-3 rounded-lg border border-amber-200 bg-amber-50 text-amber-800 hover:bg-amber-100 font-medium transition"
               >
-                Fill Landlord Demo
+                {t('login.fillLandlordDemo')}
               </button>
             </div>
           </div>
 
           <p className="text-center text-sm text-slate-600 mt-6">
-            Don&apos;t have an account?{' '}
+            {t('login.noAccount')}{' '}
             <Link href="/register" className="text-blue-600 font-semibold hover:underline">
-              Create one
+              {t('login.createOne')}
             </Link>
           </p>
         </div>

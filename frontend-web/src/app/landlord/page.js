@@ -16,15 +16,20 @@ import {
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
 
+function MapPickerLoading() {
+  const { t } = useSettings();
+  return (
+    <div className="w-full h-80 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-xs text-slate-400 border border-slate-200 dark:border-slate-700">
+      {t('landlord.loadingMapPicker')}
+    </div>
+  );
+}
+
 const LocationPickerMap = dynamic(
   () => import('../../components/LocationPickerMap'),
   {
     ssr: false,
-    loading: () => (
-      <div className="w-full h-80 rounded-xl bg-slate-100 dark:bg-slate-800 animate-pulse flex items-center justify-center text-xs text-slate-400 border border-slate-200 dark:border-slate-700">
-        Loading interactive map picker...
-      </div>
-    ),
+    loading: () => <MapPickerLoading />,
   }
 );
 
@@ -81,6 +86,7 @@ export default function LandlordPortal() {
   const isDark = Boolean(
     settings?.darkMode ?? settings?.isDark ?? settings?.theme === 'dark'
   );
+  const t = settings?.t || ((k) => k);
 
   const [bookings, setBookings] = useState([]);
   const [myProperties, setMyProperties] = useState([]);
@@ -274,7 +280,7 @@ export default function LandlordPortal() {
 
   const handleDeleteProperty = async (property) => {
     const confirmed = window.confirm(
-      `Are you sure you want to delete "${property.title}"? This will also remove its rooms and associated booking requests.`
+      t('landlord.confirmDelete', { title: property.title })
     );
     if (!confirmed) return;
 
@@ -287,7 +293,7 @@ export default function LandlordPortal() {
       await loadMyProperties();
       await loadBookings();
     } catch (err) {
-      alert(err.message || 'Failed to delete property.');
+      alert(err.message || t('landlord.errorDeleteProperty'));
     } finally {
       setDeletingId(null);
     }
@@ -403,7 +409,7 @@ export default function LandlordPortal() {
     if (images.length === 0) {
       setCreatedMsg({
         type: 'error',
-        text: 'Please upload or add at least one photo of the property.',
+        text: t('landlord.errorAtLeastOnePhoto'),
       });
       return;
     }
@@ -411,7 +417,7 @@ export default function LandlordPortal() {
     const payload = {
       title,
       description:
-        description.trim() || `Modern student accommodation in ${city}`,
+        description.trim() || t('landlord.defaultDescription', { city }),
       address,
       city,
       latitude: parseFloat(latitude),
@@ -439,14 +445,14 @@ export default function LandlordPortal() {
         await updateProperty(editingPropertyId, payload);
         setCreatedMsg({
           type: 'success',
-          text: 'Property changes and commute times saved successfully!',
+          text: t('landlord.successUpdated'),
         });
         resetForm();
       } else {
         await createNewProperty(payload);
         setCreatedMsg({
           type: 'success',
-          text: 'Property published with your commute times, amenities, coordinates, and photos!',
+          text: t('landlord.successPublished'),
         });
         resetForm();
       }
@@ -454,7 +460,7 @@ export default function LandlordPortal() {
     } catch (err) {
       setCreatedMsg({
         type: 'error',
-        text: err.message || 'Error saving property.',
+        text: err.message || t('landlord.errorSavingProperty'),
       });
     } finally {
       setSubmitting(false);
@@ -549,7 +555,7 @@ export default function LandlordPortal() {
         {darkScopeStyles}
         <Navbar />
         <div className="max-w-7xl mx-auto px-4 py-12 text-center text-slate-500 dark:text-slate-400">
-          Checking account permissions...
+          {t('landlord.checkingPermissions')}
         </div>
       </div>
     );
@@ -566,25 +572,25 @@ export default function LandlordPortal() {
         <Navbar />
         <div className="max-w-md mx-auto mt-16 p-8 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 text-center">
           <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
-            Landlord Account Required
+            {t('landlord.accountRequiredTitle')}
           </h2>
           <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
             {user
-              ? `You are currently signed in as ${user.name} (STUDENT). Please sign in with a Landlord account to list properties and manage student bookings.`
-              : 'Please sign in with a Landlord account to publish properties and manage student booking requests.'}
+              ? t('landlord.accountRequiredSignedIn', { name: user.name })
+              : t('landlord.accountRequiredGuest')}
           </p>
           <div className="flex justify-center gap-3">
             <Link
               href="/login"
               className="bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-lg text-sm font-semibold transition"
             >
-              Sign In as Landlord
+              {t('landlord.signInAsLandlord')}
             </Link>
             <Link
               href="/register"
               className="border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 px-5 py-2.5 rounded-lg text-sm font-semibold transition"
             >
-              Register Landlord
+              {t('landlord.registerLandlord')}
             </Link>
           </div>
         </div>
@@ -608,10 +614,10 @@ export default function LandlordPortal() {
         >
           <div>
             <h1 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Landlord Management Portal
+              {t('landlord.portalTitle')}
             </h1>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Signed in as{' '}
+              {t('landlord.signedInAs')}{' '}
               <span className="font-semibold text-slate-700 dark:text-slate-200">
                 {user.name}
               </span>{' '}
@@ -619,7 +625,7 @@ export default function LandlordPortal() {
             </p>
           </div>
           <span className="self-start sm:self-auto text-xs font-bold uppercase tracking-wider px-3 py-1 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-transparent dark:border-amber-800/50">
-            Verified Landlord
+            {t('landlord.verifiedLandlord')}
           </span>
         </div>
 
@@ -635,8 +641,8 @@ export default function LandlordPortal() {
             <div className="flex items-center justify-between gap-2 mb-1">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
                 {editingPropertyId
-                  ? '✏️ Edit Student Property'
-                  : 'Publish New Student Property'}
+                  ? t('landlord.editPropertyTitle')
+                  : t('landlord.publishPropertyTitle')}
               </h2>
               {editingPropertyId && (
                 <button
@@ -644,14 +650,14 @@ export default function LandlordPortal() {
                   onClick={resetForm}
                   className="text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-red-600 dark:hover:text-red-400 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-red-50 dark:hover:bg-red-950/50 transition"
                 >
-                  Cancel Edit
+                  {t('landlord.cancelEdit')}
                 </button>
               )}
             </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
               {editingPropertyId
-                ? 'Update your property details, commute minutes, map pin, amenities, photos, or room pricing below.'
-                : 'Search for a street to jump the map, set commute times to campus, select amenities, and upload photos.'}
+                ? t('landlord.editPropertySub')
+                : t('landlord.publishPropertySub')}
             </p>
 
             <form onSubmit={handleSubmitProperty} className="space-y-6">
@@ -660,28 +666,28 @@ export default function LandlordPortal() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                      Property Title
+                      {t('landlord.propertyTitleLabel')}
                     </label>
                     <input
                       type="text"
                       required
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g., Bloomsbury Student Studios"
+                      placeholder={t('landlord.propertyTitlePlaceholder')}
                       className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                      City
+                      {t('landlord.cityLabel')}
                     </label>
                     <input
                       type="text"
                       required
                       value={city}
                       onChange={(e) => setCity(e.target.value)}
-                      placeholder="London"
+                      placeholder={t('landlord.cityPlaceholder')}
                       className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
@@ -689,14 +695,14 @@ export default function LandlordPortal() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                    Street Address
+                    {t('landlord.streetAddressLabel')}
                   </label>
                   <input
                     type="text"
                     required
                     value={address}
                     onChange={(e) => setAddress(e.target.value)}
-                    placeholder="42 Gower Street (or use street search below)"
+                    placeholder={t('landlord.streetAddressPlaceholder')}
                     className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
@@ -705,7 +711,7 @@ export default function LandlordPortal() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 dark:bg-slate-800/60 p-3.5 rounded-xl border border-slate-200 dark:border-slate-700">
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 uppercase mb-1">
-                      🚶 Walking Time to Campus (mins)
+                      {t('landlord.walkingTimeLabel')}
                     </label>
                     <input
                       type="number"
@@ -713,14 +719,14 @@ export default function LandlordPortal() {
                       required
                       value={walkMins}
                       onChange={(e) => setWalkMins(e.target.value)}
-                      placeholder="e.g., 12"
+                      placeholder={t('landlord.walkingTimePlaceholder')}
                       className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-200 uppercase mb-1">
-                      🚇 Transit Time to Campus (mins)
+                      {t('landlord.transitTimeLabel')}
                     </label>
                     <input
                       type="number"
@@ -728,7 +734,7 @@ export default function LandlordPortal() {
                       required
                       value={transitMins}
                       onChange={(e) => setTransitMins(e.target.value)}
-                      placeholder="e.g., 5"
+                      placeholder={t('landlord.transitTimePlaceholder')}
                       className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                     />
                   </div>
@@ -736,13 +742,13 @@ export default function LandlordPortal() {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                    Property Description
+                    {t('landlord.descriptionLabel')}
                   </label>
                   <textarea
                     rows={2}
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    placeholder="Describe the residence, study spaces, nearby transport, and security..."
+                    placeholder={t('landlord.descriptionPlaceholder')}
                     className="w-full border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
@@ -755,10 +761,10 @@ export default function LandlordPortal() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">
-                      Search Street & Pinpoint Property Location
+                      {t('landlord.searchStreetLabel')}
                     </label>
                     <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                      Search for a street to fly the map there, then click or drag the pin onto the exact building.
+                      {t('landlord.searchStreetSub')}
                     </p>
                   </div>
 
@@ -769,7 +775,7 @@ export default function LandlordPortal() {
                       className="text-xs border border-slate-300 dark:border-slate-700 rounded-lg px-2.5 py-1.5 bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-medium"
                     >
                       <option value="" disabled>
-                        🎯 Or jump near university...
+                        {t('landlord.jumpNearUni')}
                       </option>
                       {universities.map((u) => (
                         <option key={u.id} value={u.id}>
@@ -795,12 +801,12 @@ export default function LandlordPortal() {
                         setStreetQuery(e.target.value);
                         setShowDropdown(true);
                       }}
-                      placeholder="Search street, neighborhood, or landmark (e.g., Gower Street, London)..."
+                      placeholder={t('landlord.streetSearchPlaceholder')}
                       className="w-full pl-9 pr-20 py-2.5 text-xs sm:text-sm border border-slate-300 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none bg-slate-50/60 dark:bg-slate-800 text-slate-900 dark:text-white"
                     />
                     {searchingStreet && (
                       <span className="absolute right-3 text-[11px] text-blue-600 dark:text-blue-400 font-semibold animate-pulse">
-                        Searching...
+                        {t('landlord.searching')}
                       </span>
                     )}
                     {!searchingStreet && streetQuery && (
@@ -813,7 +819,7 @@ export default function LandlordPortal() {
                         }}
                         className="absolute right-3 text-xs text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 font-semibold"
                       >
-                        Clear
+                        {t('landlord.clear')}
                       </button>
                     )}
                   </div>
@@ -849,7 +855,7 @@ export default function LandlordPortal() {
                     streetQuery.trim().length >= 3 &&
                     streetResults.length === 0 && (
                       <div className="absolute left-0 right-0 mt-1.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg p-3 text-xs text-slate-500 dark:text-slate-400 text-center z-[1000]">
-                        No matching streets found. Try adding the city name (e.g., &ldquo;Tahrir Street, Cairo&rdquo;).
+                        {t('landlord.noStreetsFound')}
                       </div>
                     )}
                 </div>
@@ -871,7 +877,9 @@ export default function LandlordPortal() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase">
-                    Amenities & Facilities ({selectedAmenities.length} selected)
+                    {t('landlord.amenitiesLabel', {
+                      count: selectedAmenities.length,
+                    })}
                   </label>
                   {selectedAmenities.length > 0 && (
                     <button
@@ -879,17 +887,19 @@ export default function LandlordPortal() {
                       onClick={() => setSelectedAmenities([])}
                       className="text-[11px] text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-medium"
                     >
-                      Clear all
+                      {t('landlord.clearAll')}
                     </button>
                   )}
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
-                  Check the facilities included with this property. Only checked items will be shown on the listing page.
+                  {t('landlord.amenitiesSub')}
                 </p>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mb-3">
                   {allDisplayAmenities.map((amenity) => {
                     const isChecked = selectedAmenities.includes(amenity);
+                    const amenityKey = `landlord.amenity.${amenity}`;
+                    const translatedAmenity = t(amenityKey);
                     return (
                       <label
                         key={amenity}
@@ -905,7 +915,11 @@ export default function LandlordPortal() {
                           onChange={() => handleToggleAmenity(amenity)}
                           className="w-4 h-4 rounded accent-blue-600 cursor-pointer"
                         />
-                        <span className="truncate">{amenity}</span>
+                        <span className="truncate">
+                          {translatedAmenity === amenityKey
+                            ? amenity
+                            : translatedAmenity}
+                        </span>
                       </label>
                     );
                   })}
@@ -922,7 +936,7 @@ export default function LandlordPortal() {
                         handleAddCustomAmenity();
                       }
                     }}
-                    placeholder="Add custom facility (e.g., Rooftop Terrace, Cinema Room)..."
+                    placeholder={t('landlord.customAmenityPlaceholder')}
                     className="flex-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-1.5 text-xs"
                   />
                   <button
@@ -930,7 +944,7 @@ export default function LandlordPortal() {
                     onClick={handleAddCustomAmenity}
                     className="px-3.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition shrink-0"
                   >
-                    + Add Custom
+                    {t('landlord.addCustomBtn')}
                   </button>
                 </div>
               </div>
@@ -940,16 +954,19 @@ export default function LandlordPortal() {
               {/* Step 4: Property Photos Uploader & Gallery */}
               <div>
                 <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                  Property Photos ({images.length})
+                  {t('landlord.propertyPhotosLabel', { count: images.length })}
                 </label>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mb-3">
-                  Upload photos from your computer or paste an image URL. The first photo is used as the cover image.
+                  {t('landlord.propertyPhotosSub')}
                 </p>
 
                 <div className="flex flex-col sm:flex-row gap-2 mb-4">
                   <label className="cursor-pointer inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800 text-xs font-semibold transition shrink-0">
                     <span>
-                      📷 {uploadingPhotos ? 'Processing...' : 'Upload Photos'}
+                      📷{' '}
+                      {uploadingPhotos
+                        ? t('landlord.processingPhotos')
+                        : t('landlord.uploadPhotosBtn')}
                     </span>
                     <input
                       type="file"
@@ -966,7 +983,7 @@ export default function LandlordPortal() {
                       type="url"
                       value={imageUrlInput}
                       onChange={(e) => setImageUrlInput(e.target.value)}
-                      placeholder="Or paste image URL (https://...)"
+                      placeholder={t('landlord.pasteImageUrlPlaceholder')}
                       className="flex-1 border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-900 dark:text-white rounded-lg px-3 py-2 text-xs"
                     />
                     <button
@@ -974,14 +991,14 @@ export default function LandlordPortal() {
                       onClick={handleAddImageUrl}
                       className="px-3.5 py-2 rounded-lg bg-slate-800 dark:bg-slate-700 hover:bg-slate-900 dark:hover:bg-slate-600 text-white text-xs font-semibold transition shrink-0"
                     >
-                      Add URL
+                      {t('landlord.addUrlBtn')}
                     </button>
                   </div>
                 </div>
 
                 {images.length === 0 ? (
                   <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-6 text-center text-xs text-slate-400 dark:text-slate-500">
-                    No photos added yet. Upload files or add an image URL above.
+                    {t('landlord.noPhotosAdded')}
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -1002,7 +1019,7 @@ export default function LandlordPortal() {
 
                         {idx === 0 ? (
                           <span className="absolute top-1.5 left-1.5 bg-blue-600 text-white text-[10px] font-bold px-2 py-0.5 rounded">
-                            Cover
+                            {t('landlord.coverBadge')}
                           </span>
                         ) : (
                           <button
@@ -1010,7 +1027,7 @@ export default function LandlordPortal() {
                             onClick={() => handleSetCoverImage(idx)}
                             className="opacity-0 group-hover:opacity-100 absolute bottom-1.5 left-1.5 bg-slate-900/80 text-white text-[10px] font-semibold px-2 py-0.5 rounded transition"
                           >
-                            Make Cover
+                            {t('landlord.makeCoverBtn')}
                           </button>
                         )}
 
@@ -1018,7 +1035,7 @@ export default function LandlordPortal() {
                           type="button"
                           onClick={() => handleRemoveImage(idx)}
                           className="absolute top-1.5 right-1.5 w-5 h-5 rounded-full bg-red-600 text-white text-xs font-bold flex items-center justify-center shadow hover:bg-red-700"
-                          title="Remove photo"
+                          title={t('landlord.removePhotoTitle')}
                         >
                           &times;
                         </button>
@@ -1033,12 +1050,12 @@ export default function LandlordPortal() {
               {/* Step 5: Primary Room Configuration */}
               <div>
                 <h3 className="text-xs font-bold text-slate-700 dark:text-slate-200 uppercase mb-3">
-                  Primary Room Tier Details
+                  {t('landlord.primaryRoomHeading')}
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                      Room Tier Name
+                      {t('landlord.roomTierNameLabel')}
                     </label>
                     <input
                       type="text"
@@ -1051,22 +1068,28 @@ export default function LandlordPortal() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                      Category
+                      {t('landlord.categoryLabel')}
                     </label>
                     <select
                       value={roomCategory}
                       onChange={(e) => setRoomCategory(e.target.value)}
                       className="w-full border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-white"
                     >
-                      <option value="PRIVATE_ROOM">Private Room</option>
-                      <option value="ENTIRE_PLACE">Studio / Entire Place</option>
-                      <option value="SHARED_ROOM">Shared Room</option>
+                      <option value="PRIVATE_ROOM">
+                        {t('landlord.privateRoomOption')}
+                      </option>
+                      <option value="ENTIRE_PLACE">
+                        {t('landlord.entirePlaceOption')}
+                      </option>
+                      <option value="SHARED_ROOM">
+                        {t('landlord.sharedRoomOption')}
+                      </option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                      Price / Month (£)
+                      {t('landlord.pricePerMonthLabel')}
                     </label>
                     <input
                       type="number"
@@ -1079,7 +1102,7 @@ export default function LandlordPortal() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase mb-1">
-                      Room Size (m²)
+                      {t('landlord.roomSizeLabel')}
                     </label>
                     <input
                       type="number"
@@ -1103,10 +1126,10 @@ export default function LandlordPortal() {
                   }`}
                 >
                   {submitting
-                    ? 'Saving...'
+                    ? t('landlord.savingBtn')
                     : editingPropertyId
-                    ? 'Save Property Changes'
-                    : 'Publish Property Listing'}
+                    ? t('landlord.saveChangesBtn')
+                    : t('landlord.publishListingBtn')}
                 </button>
 
                 {editingPropertyId && (
@@ -1115,7 +1138,7 @@ export default function LandlordPortal() {
                     onClick={resetForm}
                     className="px-5 py-3 rounded-xl border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 text-sm font-semibold transition"
                   >
-                    Cancel
+                    {t('landlord.cancelBtn')}
                   </button>
                 )}
               </div>
@@ -1138,19 +1161,19 @@ export default function LandlordPortal() {
           <div className="lg:col-span-5 bg-white dark:bg-slate-900 p-6 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 h-fit">
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                Incoming Student Bookings
+                {t('landlord.incomingBookingsTitle')}
               </h2>
               <button
                 onClick={loadBookings}
                 className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
               >
-                Refresh
+                {t('landlord.refreshBtn')}
               </button>
             </div>
 
             {bookings.length === 0 ? (
               <p className="text-sm text-slate-500 dark:text-slate-400 py-8 text-center">
-                No booking requests submitted yet.
+                {t('landlord.noBookingsYet')}
               </p>
             ) : (
               <div className="space-y-4">
@@ -1161,19 +1184,24 @@ export default function LandlordPortal() {
                   >
                     <div>
                       <h3 className="font-bold text-slate-900 dark:text-white text-sm">
-                        {b.roomType?.property?.title || 'Property'} —{' '}
+                        {b.roomType?.property?.title ||
+                          t('landlord.propertyFallback')}{' '}
+                        —{' '}
                         <span className="text-blue-600 dark:text-blue-400">
                           {b.roomType?.name}
                         </span>
                       </h3>
                       <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5">
-                        Student: <strong>{b.student?.name}</strong> (
+                        {t('landlord.studentLabel')}{' '}
+                        <strong>{b.student?.name}</strong> (
                         {b.student?.email})
                       </p>
                       <p className="text-xs text-slate-400 dark:text-slate-400 mt-1">
-                        Move-in: {new Date(b.moveInDate).toLocaleDateString()} •{' '}
-                        {b.durationMonths} months • $
-                        {b.roomType?.pricePerMonth}/mo
+                        {t('landlord.moveInLabel')}{' '}
+                        {new Date(b.moveInDate).toLocaleDateString()} •{' '}
+                        {b.durationMonths} {t('landlord.monthsUnit')} • $
+                        {b.roomType?.pricePerMonth}
+                        {t('landlord.perMonthShort')}
                       </p>
                     </div>
 
@@ -1187,7 +1215,7 @@ export default function LandlordPortal() {
                             : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300'
                         }`}
                       >
-                        {b.status}
+                        {t(`landlord.status.${b.status}`)}
                       </span>
 
                       {b.status === 'PENDING' && (
@@ -1196,13 +1224,13 @@ export default function LandlordPortal() {
                             onClick={() => handleStatus(b.id, 'APPROVED')}
                             className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition"
                           >
-                            Approve
+                            {t('landlord.approveBtn')}
                           </button>
                           <button
                             onClick={() => handleStatus(b.id, 'REJECTED')}
                             className="px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold transition"
                           >
-                            Reject
+                            {t('landlord.rejectBtn')}
                           </button>
                         </div>
                       )}
@@ -1219,10 +1247,12 @@ export default function LandlordPortal() {
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-lg font-bold text-slate-900 dark:text-white">
-                My Listed Properties ({myProperties.length})
+                {t('landlord.myListedPropertiesTitle', {
+                  count: myProperties.length,
+                })}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                View, edit details, or remove the student properties you have published.
+                {t('landlord.myListedPropertiesSub')}
               </p>
             </div>
             <button
@@ -1230,17 +1260,17 @@ export default function LandlordPortal() {
               onClick={loadMyProperties}
               className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
             >
-              Refresh List
+              {t('landlord.refreshListBtn')}
             </button>
           </div>
 
           {loadingProperties ? (
             <p className="text-sm text-slate-500 dark:text-slate-400 py-8 text-center">
-              Loading your properties...
+              {t('landlord.loadingMyProperties')}
             </p>
           ) : myProperties.length === 0 ? (
             <div className="border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl p-8 text-center text-sm text-slate-500 dark:text-slate-400">
-              You haven&apos;t published any properties yet. Use the form above to create your first listing.
+              {t('landlord.noListedPropertiesYet')}
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -1270,7 +1300,8 @@ export default function LandlordPortal() {
                         </span>
                         {primaryRoom && (
                           <span className="absolute bottom-2.5 right-2.5 bg-blue-600 text-white text-xs font-bold px-2.5 py-1 rounded-lg shadow">
-                            £{primaryRoom.pricePerMonth}/mo
+                            £{primaryRoom.pricePerMonth}
+                            {t('landlord.perMonthShort')}
                           </span>
                         )}
                       </div>
@@ -1286,19 +1317,25 @@ export default function LandlordPortal() {
                         <div className="flex flex-wrap items-center gap-2 mt-3 text-[11px] text-slate-600 dark:text-slate-300">
                           {prop.walkMins && (
                             <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded font-medium">
-                              🚶 {prop.walkMins}m walk
+                              {t('landlord.walkBadge', { mins: prop.walkMins })}
                             </span>
                           )}
                           {prop.transitMins && (
                             <span className="bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-blue-300 px-2 py-0.5 rounded font-medium">
-                              🚇 {prop.transitMins}m transit
+                              {t('landlord.transitBadge', {
+                                mins: prop.transitMins,
+                              })}
                             </span>
                           )}
                           <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-medium">
-                            ✨ {prop.amenities?.length || 0} amenities
+                            {t('landlord.amenitiesCountBadge', {
+                              count: prop.amenities?.length || 0,
+                            })}
                           </span>
                           <span className="bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded font-medium">
-                            📷 {prop.images?.length || 0} photos
+                            {t('landlord.photosCountBadge', {
+                              count: prop.images?.length || 0,
+                            })}
                           </span>
                         </div>
                       </div>
@@ -1309,7 +1346,7 @@ export default function LandlordPortal() {
                         href={`/properties/${prop.id}`}
                         className="text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline"
                       >
-                        View Page &rarr;
+                        {t('landlord.viewPageLink')}
                       </Link>
 
                       <div className="flex items-center gap-2">
@@ -1318,7 +1355,9 @@ export default function LandlordPortal() {
                           onClick={() => handleStartEdit(prop)}
                           className="px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-950/60 hover:bg-amber-200 dark:hover:bg-amber-900/70 text-amber-900 dark:text-amber-300 text-xs font-semibold transition"
                         >
-                          {isBeingEdited ? 'Editing...' : 'Edit'}
+                          {isBeingEdited
+                            ? t('landlord.editingBtn')
+                            : t('landlord.editBtn')}
                         </button>
                         <button
                           type="button"
@@ -1326,7 +1365,9 @@ export default function LandlordPortal() {
                           disabled={deletingId === prop.id}
                           className="px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-950/60 hover:bg-red-200 dark:hover:bg-red-900/70 disabled:opacity-50 text-red-700 dark:text-red-300 text-xs font-semibold transition"
                         >
-                          {deletingId === prop.id ? 'Deleting...' : 'Delete'}
+                          {deletingId === prop.id
+                            ? t('landlord.deletingBtn')
+                            : t('landlord.deleteBtn')}
                         </button>
                       </div>
                     </div>
