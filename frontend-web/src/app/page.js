@@ -6,6 +6,7 @@ import Navbar from '../components/Navbar';
 import FilterBar from '../components/FilterBar';
 import PropertyCard from '../components/PropertyCard';
 import BookingModal from '../components/BookingModal';
+import HeroSlider from '../components/HeroSlider';
 import { fetchUniversities, searchListings } from '../services/api';
 import { useSettings } from '../context/SettingsContext';
 
@@ -82,13 +83,15 @@ export default function HomePage() {
         totalFound={listings.length}
       />
 
-      <main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+<main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
         <div
           className={`${
             mobileView === 'map' ? 'hidden' : 'block'
           } lg:block w-full lg:w-[55%] xl:w-[52%] h-full overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6 space-y-4 bg-slate-50`}
         >
-          <div>
+          <HeroSlider />
+
+          <div id="listings-heading">
             <h1 className="text-xl font-extrabold text-slate-900">
               {t('home.title', { name: currentUni?.name || t('home.campusFallback') })}
             </h1>
