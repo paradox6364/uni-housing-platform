@@ -67,78 +67,84 @@ export default function HomePage() {
   }, [selectedUniId, maxDistanceKm, maxPrice, category]);
 
   return (
-    <div className="app-screen flex flex-col overflow-hidden">
+    <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
 
-      <FilterBar
-        universities={universities}
-        selectedUniId={selectedUniId}
-        onSelectUni={setSelectedUniId}
-        maxDistanceKm={maxDistanceKm}
-        onChangeDistance={setMaxDistanceKm}
-        maxPrice={maxPrice}
-        onChangePrice={setMaxPrice}
-        category={category}
-        onChangeCategory={setCategory}
-        totalFound={listings.length}
-      />
+      {/* السلايدر الاحترافي بعرض الموقع بالكامل */}
+      <HeroSlider />
 
-<main className="flex-1 flex flex-col lg:flex-row overflow-hidden">
-        <div
-          className={`${
-            mobileView === 'map' ? 'hidden' : 'block'
-          } lg:block w-full lg:w-[55%] xl:w-[52%] h-full overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6 space-y-4 bg-slate-50`}
-        >
-          <HeroSlider />
-
-          <div id="listings-heading">
-            <h1 className="text-xl font-extrabold text-slate-900">
-              {t('home.title', { name: currentUni?.name || t('home.campusFallback') })}
-            </h1>
-            <p className="text-xs text-slate-500">
-              {t('home.subtitle')}
-            </p>
-          </div>
-
-          {loading ? (
-            <div className="space-y-4">
-              {[1, 2].map((n) => (
-                <div key={n} className="h-48 bg-white rounded-2xl border border-slate-200 animate-pulse p-5" />
-              ))}
-            </div>
-          ) : listings.length === 0 ? (
-            <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
-              <p className="font-bold text-slate-800 text-lg">{t('home.emptyTitle')}</p>
-              <p className="text-sm text-slate-500 mt-1">{t('home.emptyHint')}</p>
-            </div>
-          ) : (
-            listings.map((property) => (
-              <PropertyCard
-                key={property.id}
-                property={property}
-                universityName={currentUni?.name}
-                isHovered={hoveredPropertyId === property.id}
-                onHover={setHoveredPropertyId}
-                onLeave={() => setHoveredPropertyId(null)}
-                onBook={setBookingProperty}
-              />
-            ))
-          )}
-        </div>
-
-        <div
-          className={`${
-            mobileView === 'map' ? 'block' : 'hidden'
-          } lg:block w-full lg:w-[45%] xl:w-[48%] h-full relative border-s border-slate-200`}
-        >
-          <MapView
-            university={currentUni}
-            listings={listings}
-            hoveredPropertyId={hoveredPropertyId}
-            onSelectProperty={setBookingProperty}
+      {/* قسم الفلاتر والبحث والخريطة تحته مباشرة */}
+      <div id="explorer-section" className="flex-1 flex flex-col">
+        <div className="sticky top-16 z-30">
+          <FilterBar
+            universities={universities}
+            selectedUniId={selectedUniId}
+            onSelectUni={setSelectedUniId}
+            maxDistanceKm={maxDistanceKm}
+            onChangeDistance={setMaxDistanceKm}
+            maxPrice={maxPrice}
+            onChangePrice={setMaxPrice}
+            category={category}
+            onChangeCategory={setCategory}
+            totalFound={listings.length}
           />
         </div>
-      </main>
+
+        <main className="flex flex-col lg:flex-row h-[calc(100vh-7.5rem)] overflow-hidden">
+          <div
+            className={`${
+              mobileView === 'map' ? 'hidden' : 'block'
+            } lg:block w-full lg:w-[55%] xl:w-[52%] h-full overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6 space-y-4 bg-slate-50`}
+          >
+            <div>
+              <h1 className="text-xl font-extrabold text-slate-900">
+                {t('home.title', { name: currentUni?.name || t('home.campusFallback') })}
+              </h1>
+              <p className="text-xs text-slate-500">
+                {t('home.subtitle')}
+              </p>
+            </div>
+
+            {loading ? (
+              <div className="space-y-4">
+                {[1, 2].map((n) => (
+                  <div key={n} className="h-48 bg-white rounded-2xl border border-slate-200 animate-pulse p-5" />
+                ))}
+              </div>
+            ) : listings.length === 0 ? (
+              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+                <p className="font-bold text-slate-800 text-lg">{t('home.emptyTitle')}</p>
+                <p className="text-sm text-slate-500 mt-1">{t('home.emptyHint')}</p>
+              </div>
+            ) : (
+              listings.map((property) => (
+                <PropertyCard
+                  key={property.id}
+                  property={property}
+                  universityName={currentUni?.name}
+                  isHovered={hoveredPropertyId === property.id}
+                  onHover={setHoveredPropertyId}
+                  onLeave={() => setHoveredPropertyId(null)}
+                  onBook={setBookingProperty}
+                />
+              ))
+            )}
+          </div>
+
+          <div
+            className={`${
+              mobileView === 'map' ? 'block' : 'hidden'
+            } lg:block w-full lg:w-[45%] xl:w-[48%] h-full relative border-s border-slate-200`}
+          >
+            <MapView
+              university={currentUni}
+              listings={listings}
+              hoveredPropertyId={hoveredPropertyId}
+              onSelectProperty={setBookingProperty}
+            />
+          </div>
+        </main>
+      </div>
 
       {/* زر التبديل بين القائمة والخريطة (موبايل وتابلت فقط) */}
       <button
