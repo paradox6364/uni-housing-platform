@@ -7,11 +7,13 @@ import {
   ShieldCheck,
   MapPin,
   Wifi,
-  ArrowLeft,
-  ArrowRight,
+  ArrowDown,
   ChevronLeft,
   ChevronRight,
   Building2,
+  Star,
+  CheckCircle2,
+  Clock,
 } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 
@@ -23,102 +25,132 @@ const SLIDES = {
       title: 'اسكن على بُعد خطوات من',
       highlight: 'حرم جامعتك',
       description:
-        'قارن بين مئات الغرف والشقق الطلابية الموثقة، واعرف المسافة الفعلية بالدقائق والكم عبر الخريطة التفاعلية قبل الحجز.',
+        'اكتشف وقارن بين مئات الغرف والاستوديوهات الطلابية الموثقة 100%. شاهد المسافة الفعلية بالدقائق على الخريطة التفاعلية واحجز بأمان تام.',
       image:
-        'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=1600&q=80',
-      cta: 'استكشف السكن المتاح',
-      stats: [
-        { icon: ShieldCheck, value: '100%', label: 'عقارات موثقة' },
-        { icon: MapPin, value: '5 دقائق', label: 'متوسط المسافة' },
-        { icon: Sparkles, value: '4.9/5', label: 'تقييم الطلاب' },
-      ],
+        'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=2000&q=85',
+      cta: 'ابدأ استكشاف السكن الآن',
+      card: {
+        title: 'استوديوهات بلومزبري الطلابية',
+        location: '4 دقائق مشياً إلى الحرم الجامعي',
+        price: '$240',
+        period: '/ شهرياً',
+        rating: '4.9',
+        reviews: '128 تقييم طلابي',
+        tag: 'موثق وفوري',
+        perks: ['شامل جميع الفواتير', 'إنترنت فايبر فائق السرعة', 'أمن وحراسة 24/7'],
+      },
     },
     {
       id: 2,
-      badge: 'بيئة مثالية للدراسة والراحة',
+      badge: 'بيئة مصممة للتفوق والراحة',
       title: 'غرف عصرية مجهزة بالكامل',
       highlight: 'لنجاحك الدراسي',
       description:
-        'جميع الوحدات تأتي مفروشة بالكامل مع مكاتب دراسية مريحة، إنترنت فائق السرعة، شاملة الفواتير والخدمات الأمنية على مدار الساعة.',
+        'لا تشغل بالك بالتجهيزات أو الفواتير؛ جميع الوحدات تأتي مفروشة بالكامل مع مكاتب دراسية مريحة، صالات مذاكرة هادئة، وخدمات صيانة دورية.',
       image:
-        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1600&q=80',
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=2000&q=85',
       cta: 'تصفح الغرف والاستوديوهات',
-      stats: [
-        { icon: Wifi, value: 'فايبر', label: 'إنترنت مجاني' },
-        { icon: ShieldCheck, value: '24/7', label: 'أمن وحراسة' },
-        { icon: Building2, value: '0%', label: 'عمولة خفية' },
-      ],
+      card: {
+        title: 'أجنحة كامبوس فيو الحديثة',
+        location: '6 دقائق بالمواصلات للجامعة',
+        price: '$195',
+        period: '/ شهرياً',
+        rating: '4.8',
+        reviews: '94 تقييم طلابي',
+        tag: 'الأكثر طلباً',
+        perks: ['مفروش بالكامل', 'قاعة دراسة مشتركة', 'صالة رياضية مجانية'],
+      },
     },
     {
       id: 3,
-      badge: 'حجز فوري وتواصل مباشر',
-      title: 'اختر غرفتك وقارن الأسعار',
+      badge: 'حجز إلكتروني مباشر بدون عمولة',
+      title: 'حدد جامعتك على الخريطة',
       highlight: 'واحجز بضغطة زر',
       description:
-        'تواصل مباشرة مع ملاك العقارات الموثقين، شاهد الموقع الدقيق على الخريطة، وأرسل طلب حجزك في ثوانٍ بدون وسطاء.',
+        'تواصل مباشرة مع ملاك العقارات المعتمدين، قارن الأسعار الحقيقية، وأرسل طلب حجزك في ثوانٍ بدون أي رسوم خفية أو سماسرة.',
       image:
-        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1600&q=80',
-      cta: 'ابدأ البحث الآن',
-      stats: [
-        { icon: Sparkles, value: 'فوري', label: 'تأكيد الحجز' },
-        { icon: MapPin, value: 'دقيق', label: 'تحديد الموقع' },
-        { icon: ShieldCheck, value: 'آمن', label: 'عقود موثقة' },
-      ],
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=2000&q=85',
+      cta: 'انتقل إلى الخريطة التفاعلية',
+      card: {
+        title: 'ريزيدنس الطلاب الملكي',
+        location: '3 دقائق مشياً للبوابة الرئيسية',
+        price: '$310',
+        period: '/ شهرياً',
+        rating: '5.0',
+        reviews: '210 تقييم طلابي',
+        tag: 'عمولة 0%',
+        perks: ['عقود موثقة رسمياً', 'تأكيد حجز سريع', 'دعم طلابي متواصل'],
+      },
     },
   ],
   en: [
     {
       id: 1,
-      badge: '#1 Verified Student Housing Platform',
+      badge: '#1 Verified Student Housing Marketplace',
       title: 'Live Just Steps Away From',
-      highlight: 'Your Campus',
+      highlight: 'Your University',
       description:
-        'Compare hundreds of verified student rooms and studios. Check exact walking minutes and distance on the interactive map before booking.',
+        'Discover and compare hundreds of 100% verified student rooms and studios. Check exact walking minutes on the interactive map and book securely.',
       image:
-        'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=1600&q=80',
-      cta: 'Explore Available Housing',
-      stats: [
-        { icon: ShieldCheck, value: '100%', label: 'Verified Listings' },
-        { icon: MapPin, value: '5 Mins', label: 'Avg. Walk Time' },
-        { icon: Sparkles, value: '4.9/5', label: 'Student Rating' },
-      ],
+        'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=2000&q=85',
+      cta: 'Explore Student Housing',
+      card: {
+        title: 'Bloomsbury Student Studios',
+        location: '4 mins walk to Main Campus',
+        price: '$240',
+        period: '/ month',
+        rating: '4.9',
+        reviews: '128 student reviews',
+        tag: 'Verified & Instant',
+        perks: ['All Utility Bills Included', 'High-Speed Fiber Wi-Fi', '24/7 CCTV & Security'],
+      },
     },
     {
       id: 2,
-      badge: 'Built for Study & Comfort',
+      badge: 'Designed for Study & Comfort',
       title: 'Modern Fully Furnished Rooms',
-      highlight: 'For Your Success',
+      highlight: 'Built For Success',
       description:
-        'Move-in ready spaces equipped with dedicated study desks, high-speed Wi-Fi, all-inclusive utility bills, and 24/7 CCTV security.',
+        'Skip the hassle of furniture and utility setup. Every listing comes move-in ready with ergonomic study desks, quiet lounges, and fast Wi-Fi.',
       image:
-        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=1600&q=80',
+        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?auto=format&fit=crop&w=2000&q=85',
       cta: 'Browse Rooms & Studios',
-      stats: [
-        { icon: Wifi, value: 'High-Speed', label: 'Free Wi-Fi' },
-        { icon: ShieldCheck, value: '24/7', label: 'CCTV Security' },
-        { icon: Building2, value: '0%', label: 'Booking Fees' },
-      ],
+      card: {
+        title: 'Campus View Modern Suites',
+        location: '6 mins transit to University',
+        price: '$195',
+        period: '/ month',
+        rating: '4.8',
+        reviews: '94 student reviews',
+        tag: 'Most Popular',
+        perks: ['Fully Furnished', 'Dedicated Study Lounge', 'On-Site Gym & Laundry'],
+      },
     },
     {
       id: 3,
-      badge: 'Instant & Direct Booking',
-      title: 'Compare Prices, Pick a Pin',
-      highlight: 'Book in One Click',
+      badge: 'Direct Booking • Zero Hidden Fees',
+      title: 'Pinpoint Your Campus on the Map',
+      highlight: '& Book in One Click',
       description:
-        'Connect directly with verified landlords, inspect exact street locations on the map, and send your booking request in seconds.',
+        'Connect directly with verified landlords, inspect real street locations, and submit your booking request in seconds with 0% commission.',
       image:
-        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=1600&q=80',
-      cta: 'Start Searching Now',
-      stats: [
-        { icon: Sparkles, value: 'Fast', label: 'Approval Process' },
-        { icon: MapPin, value: 'Exact', label: 'Map Coordinates' },
-        { icon: ShieldCheck, value: 'Safe', label: 'Verified Hosts' },
-      ],
+        'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?auto=format&fit=crop&w=2000&q=85',
+      cta: 'Jump to Interactive Map',
+      card: {
+        title: 'Royal Courtyards Residence',
+        location: '3 mins walk to Main Gate',
+        price: '$310',
+        period: '/ month',
+        rating: '5.0',
+        reviews: '210 student reviews',
+        tag: '0% Booking Fee',
+        perks: ['Official Verified Lease', 'Fast Landlord Approval', '24/7 Student Support'],
+      },
     },
   ],
 };
 
-export default function HeroSlider({ onExplore }) {
+export default function HeroSlider() {
   const { lang, isRTL } = useSettings();
   const slides = SLIDES[lang] || SLIDES.ar;
 
@@ -135,53 +167,56 @@ export default function HeroSlider({ onExplore }) {
 
   useEffect(() => {
     if (isPaused) return;
-    const timer = setInterval(nextSlide, 5500);
+    const timer = setInterval(nextSlide, 6000);
     return () => clearInterval(timer);
   }, [isPaused, nextSlide]);
 
   const activeSlide = slides[current] || slides[0];
-  const ArrowIcon = isRTL ? ArrowLeft : ArrowRight;
 
-  const handleExploreClick = () => {
-    if (onExplore) {
-      onExplore();
-      return;
-    }
-    const target = document.getElementById('listings-heading');
-    if (target) {
-      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const scrollToExplorer = () => {
+    const el = document.getElementById('explorer-section');
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
   return (
-    <div
+    <section
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
-      style={{ backgroundColor: '#090d16', color: '#ffffff' }}
-      className="relative w-full rounded-2xl overflow-hidden shadow-lg border border-slate-200/60 select-none mb-2"
+      style={{ backgroundColor: '#060913', color: '#ffffff' }}
+      className="relative w-full h-[520px] sm:h-[560px] lg:h-[600px] overflow-hidden select-none shrink-0"
     >
-      {/* Background Slides with Smooth Zoom */}
+      {/* Background Images with Cinematic Ken-Burns Zoom */}
       {slides.map((slide, idx) => {
         const isActive = idx === current;
         return (
           <div
             key={slide.id}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+            className={`absolute inset-0 transition-opacity duration-1000 ease-out ${
               isActive ? 'opacity-100 z-10' : 'opacity-0 z-0 pointer-events-none'
             }`}
           >
             <img
               src={slide.image}
               alt={slide.title}
-              className={`w-full h-full object-cover object-center transition-transform duration-[6000ms] ease-out ${
+              className={`w-full h-full object-cover object-center transition-transform duration-[8000ms] ease-out ${
                 isActive ? 'scale-110' : 'scale-100'
               }`}
             />
+            {/* Multi-layered luxury dark overlays */}
             <div
               style={{
                 background: isRTL
-                  ? 'linear-gradient(to left, rgba(9,13,22,0.94) 15%, rgba(9,13,22,0.78) 55%, rgba(9,13,22,0.35) 100%)'
-                  : 'linear-gradient(to right, rgba(9,13,22,0.94) 15%, rgba(9,13,22,0.78) 55%, rgba(9,13,22,0.35) 100%)',
+                  ? 'linear-gradient(90deg, rgba(6,9,19,0.55) 0%, rgba(6,9,19,0.82) 50%, rgba(6,9,19,0.96) 100%)'
+                  : 'linear-gradient(270deg, rgba(6,9,19,0.55) 0%, rgba(6,9,19,0.82) 50%, rgba(6,9,19,0.96) 100%)',
+              }}
+              className="absolute inset-0"
+            />
+            <div
+              style={{
+                background:
+                  'linear-gradient(to top, #060913 0%, rgba(6,9,19,0.25) 45%, rgba(6,9,19,0.6) 100%)',
               }}
               className="absolute inset-0"
             />
@@ -189,149 +224,239 @@ export default function HeroSlider({ onExplore }) {
         );
       })}
 
-      {/* Slide Content */}
-      <div className="relative z-20 p-5 sm:p-7 flex flex-col justify-between min-h-[290px] sm:min-h-[320px]">
-        <div className="max-w-xl space-y-3">
-          {/* Top Pill Badge */}
-          <div
-            style={{
-              backgroundColor: 'rgba(99, 102, 241, 0.2)',
-              borderColor: 'rgba(129, 140, 248, 0.35)',
-              color: '#c7d2fe',
-            }}
-            className="inline-flex items-center gap-2 px-3 py-1 rounded-full border backdrop-blur-md text-xs font-bold"
-          >
-            <span className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
-            <span>{activeSlide.badge}</span>
+      {/* Ambient Decorative Glow */}
+      <div
+        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.28) 0%, transparent 70%)' }}
+        className="pointer-events-none absolute -top-24 start-1/4 w-96 h-96 rounded-full blur-3xl z-10"
+      />
+
+      {/* Main Content Container */}
+      <div className="relative z-20 max-w-7xl mx-auto h-full px-4 sm:px-6 lg:px-8 flex flex-col justify-between py-8 sm:py-12">
+        <div className="my-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+          {/* Text & CTA Column (7 Cols) */}
+          <div className="lg:col-span-7 space-y-5">
+            {/* Glowing Badge */}
+            <div
+              style={{
+                backgroundColor: 'rgba(99, 102, 241, 0.16)',
+                borderColor: 'rgba(129, 140, 248, 0.35)',
+                color: '#e0e7ff',
+              }}
+              className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border backdrop-blur-md text-xs sm:text-sm font-bold shadow-lg"
+            >
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-400" />
+              </span>
+              <span>{activeSlide.badge}</span>
+            </div>
+
+            {/* Hero Title */}
+            <h1
+              style={{ color: '#ffffff' }}
+              className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold leading-[1.18] tracking-tight"
+            >
+              {activeSlide.title}{' '}
+              <span className="block sm:inline text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-violet-300 to-cyan-300">
+                {activeSlide.highlight}
+              </span>
+            </h1>
+
+            {/* Description */}
+            <p
+              style={{ color: '#cbd5e1' }}
+              className="text-sm sm:text-base lg:text-lg max-w-2xl leading-relaxed font-normal"
+            >
+              {activeSlide.description}
+            </p>
+
+            {/* Action Buttons */}
+            <div className="pt-2 flex flex-wrap items-center gap-3.5">
+              <button
+                type="button"
+                onClick={scrollToExplorer}
+                className="group inline-flex items-center gap-3 bg-gradient-to-r from-brand-600 to-indigo-500 hover:from-brand-500 hover:to-indigo-500 text-white text-sm sm:text-base font-bold px-7 py-3.5 sm:py-4 rounded-2xl shadow-xl shadow-brand-600/30 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <span>{activeSlide.cta}</span>
+                <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-y-1" />
+              </button>
+
+              <Link
+                href="/landlord"
+                style={{
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                  borderColor: 'rgba(255, 255, 255, 0.2)',
+                  color: '#ffffff',
+                }}
+                className="inline-flex items-center gap-2 px-6 py-3.5 sm:py-4 rounded-2xl border backdrop-blur-md hover:bg-white/15 text-sm sm:text-base font-semibold transition"
+              >
+                <Building2 className="w-4 h-4 text-indigo-300" />
+                <span>{isRTL ? 'هل أنت مالك؟ اعرض عقارك' : 'Are you a Landlord? List Property'}</span>
+              </Link>
+            </div>
+
+            {/* Trust Metrics Bar */}
+            <div className="pt-3 flex flex-wrap items-center gap-6 sm:gap-8 text-xs sm:text-sm">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-emerald-400 shrink-0" />
+                <span style={{ color: '#e2e8f0' }} className="font-semibold">
+                  {isRTL ? 'عقارات مفحوصة وموثقة 100%' : '100% Verified Listings'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-indigo-400 shrink-0" />
+                <span style={{ color: '#e2e8f0' }} className="font-semibold">
+                  {isRTL ? 'حساب دقيق للمسافة من جامعتك' : 'Exact Campus Distance Engine'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Wifi className="w-5 h-5 text-cyan-400 shrink-0" />
+                <span style={{ color: '#e2e8f0' }} className="font-semibold">
+                  {isRTL ? 'شامل الإنترنت والفواتير' : 'Bills & Fast Wi-Fi Included'}
+                </span>
+              </div>
+            </div>
           </div>
 
-          {/* Main Heading */}
-          <h2
-            style={{ color: '#ffffff' }}
-            className="text-2xl sm:text-3xl font-extrabold leading-tight"
-          >
-            {activeSlide.title}{' '}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-purple-300 to-cyan-300">
-              {activeSlide.highlight}
-            </span>
-          </h2>
-
-          {/* Subtitle */}
-          <p
-            style={{ color: '#cbd5e1' }}
-            className="text-xs sm:text-sm leading-relaxed line-clamp-2 sm:line-clamp-3"
-          >
-            {activeSlide.description}
-          </p>
-
-          {/* CTA Buttons */}
-          <div className="pt-1 flex flex-wrap items-center gap-2.5">
-            <button
-              type="button"
-              onClick={handleExploreClick}
-              className="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl shadow-md shadow-brand-900/40 transition transform hover:scale-[1.02] active:scale-[0.98]"
-            >
-              <span>{activeSlide.cta}</span>
-              <ArrowIcon className="w-4 h-4" />
-            </button>
-
-            <Link
-              href="/landlord"
+          {/* Floating Glass Showcase Card (5 Cols - Desktop) */}
+          <div className="hidden lg:block lg:col-span-5">
+            <div
               style={{
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                borderColor: 'rgba(255,255,255,0.2)',
-                color: '#f8fafc',
+                backgroundColor: 'rgba(15, 23, 42, 0.65)',
+                borderColor: 'rgba(255, 255, 255, 0.16)',
               }}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl border backdrop-blur-sm hover:bg-white/20 text-xs sm:text-sm font-semibold transition"
+              className="relative rounded-3xl border backdrop-blur-xl p-5 shadow-2xl transition-all duration-500"
             >
-              {isRTL ? 'أضف عقارك كمالك' : 'List Your Property'}
-            </Link>
+              {/* Image Preview inside Floating Card */}
+              <div className="relative h-48 rounded-2xl overflow-hidden mb-4">
+                <img
+                  src={activeSlide.image}
+                  alt={activeSlide.card.title}
+                  className="w-full h-full object-cover"
+                />
+                <div
+                  style={{ backgroundColor: 'rgba(6, 9, 19, 0.78)', color: '#6ee7b7' }}
+                  className="absolute top-3 start-3 backdrop-blur-md px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1.5 border border-emerald-400/30"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>{activeSlide.card.tag}</span>
+                </div>
+                <div
+                  style={{ backgroundColor: 'rgba(79, 70, 229, 0.95)', color: '#ffffff' }}
+                  className="absolute bottom-3 end-3 px-3.5 py-1.5 rounded-xl shadow-lg"
+                >
+                  <span className="text-lg font-extrabold">{activeSlide.card.price}</span>
+                  <span className="text-[11px] opacity-90"> {activeSlide.card.period}</span>
+                </div>
+              </div>
+
+              {/* Card Body */}
+              <div className="space-y-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <h3 style={{ color: '#ffffff' }} className="font-extrabold text-lg leading-snug">
+                      {activeSlide.card.title}
+                    </h3>
+                    <p
+                      style={{ color: '#94a3b8' }}
+                      className="text-xs flex items-center gap-1.5 mt-1 font-medium"
+                    >
+                      <Clock className="w-3.5 h-3.5 text-indigo-400 shrink-0" />
+                      <span>{activeSlide.card.location}</span>
+                    </p>
+                  </div>
+                  <div
+                    style={{ backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#fcd34d' }}
+                    className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold shrink-0"
+                  >
+                    <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+                    <span>{activeSlide.card.rating}</span>
+                  </div>
+                </div>
+
+                {/* Perks Pills */}
+                <div
+                  style={{ borderColor: 'rgba(255, 255, 255, 0.1)' }}
+                  className="pt-3 border-t grid grid-cols-1 gap-2"
+                >
+                  {activeSlide.card.perks.map((perk, index) => (
+                    <div key={index} className="flex items-center gap-2 text-xs">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span style={{ color: '#e2e8f0' }} className="font-medium">
+                        {perk}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Bottom Bar: Glass Stats + Navigation Controls */}
+        {/* Bottom Navigation Bar: Slide Thumbnails & Arrows */}
         <div
-          style={{ borderColor: 'rgba(255,255,255,0.12)' }}
-          className="mt-5 pt-3.5 border-t flex flex-wrap items-center justify-between gap-3"
+          style={{ borderColor: 'rgba(255, 255, 255, 0.12)' }}
+          className="pt-4 border-t flex items-center justify-between gap-4"
         >
-          {/* Quick Stats */}
-          <div className="flex items-center gap-4 sm:gap-6">
-            {activeSlide.stats.map((stat, i) => {
-              const IconComp = stat.icon;
+          {/* Interactive Progress Indicators */}
+          <div className="flex items-center gap-2.5">
+            {slides.map((s, idx) => {
+              const isActive = idx === current;
               return (
-                <div key={i} className="flex items-center gap-2">
-                  <div
-                    style={{ backgroundColor: 'rgba(99, 102, 241, 0.25)', color: '#a5b4fc' }}
-                    className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                  >
-                    <IconComp className="w-3.5 h-3.5" />
-                  </div>
-                  <div>
-                    <div style={{ color: '#ffffff' }} className="text-xs font-extrabold leading-none">
-                      {stat.value}
-                    </div>
-                    <div style={{ color: '#94a3b8' }} className="text-[10px] mt-0.5">
-                      {stat.label}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Slide Indicators & Prev/Next Arrows */}
-          <div className="flex items-center gap-2 ms-auto">
-            <div className="flex items-center gap-1.5 me-1">
-              {slides.map((s, idx) => (
                 <button
                   key={s.id}
                   type="button"
                   onClick={() => setCurrent(idx)}
                   aria-label={`Slide ${idx + 1}`}
-                  className="py-1 focus:outline-none"
+                  className="group flex items-center gap-2 py-1 focus:outline-none"
                 >
                   <span
                     style={{
-                      backgroundColor:
-                        idx === current ? '#818cf8' : 'rgba(255,255,255,0.3)',
+                      backgroundColor: isActive ? '#6366f1' : 'rgba(255, 255, 255, 0.28)',
                     }}
-                    className={`block h-1.5 rounded-full transition-all duration-300 ${
-                      idx === current ? 'w-7' : 'w-2 hover:w-3'
+                    className={`h-2 rounded-full transition-all duration-500 ${
+                      isActive ? 'w-12 sm:w-16' : 'w-3 group-hover:w-5'
                     }`}
                   />
                 </button>
-              ))}
-            </div>
+              );
+            })}
+            <span style={{ color: '#94a3b8' }} className="text-xs font-mono font-bold ms-2">
+              0{current + 1} / 0{slides.length}
+            </span>
+          </div>
 
+          {/* Next / Prev Buttons */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={prevSlide}
               aria-label="Previous slide"
               style={{
-                backgroundColor: 'rgba(255,255,255,0.12)',
-                borderColor: 'rgba(255,255,255,0.2)',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderColor: 'rgba(255, 255, 255, 0.2)',
                 color: '#ffffff',
               }}
-              className="w-7 h-7 rounded-lg border flex items-center justify-center hover:bg-white/25 transition"
+              className="w-10 h-10 rounded-xl border backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition active:scale-95"
             >
-              {isRTL ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+              {isRTL ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
             </button>
             <button
               type="button"
               onClick={nextSlide}
               aria-label="Next slide"
               style={{
-                backgroundColor: 'rgba(255,255,255,0.12)',
-                borderColor: 'rgba(255,255,255,0.2)',
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderColor: 'rgba(255, 255, 255, 0.2)',
                 color: '#ffffff',
               }}
-              className="w-7 h-7 rounded-lg border flex items-center justify-center hover:bg-white/25 transition"
+              className="w-10 h-10 rounded-xl border backdrop-blur-md flex items-center justify-center hover:bg-white/20 transition active:scale-95"
             >
-              {isRTL ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+              {isRTL ? <ChevronLeft className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
             </button>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
