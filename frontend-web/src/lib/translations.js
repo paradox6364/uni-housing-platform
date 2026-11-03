@@ -109,6 +109,10 @@ export const translations = {
     'student.status.APPROVED': 'مقبول',
     'student.status.REJECTED': 'مرفوض',
     'student.status.PENDING': 'قيد الانتظار',
+    'student.unbookBtn': 'إلغاء الحجز',
+    'student.unbookingBtn': 'جارٍ الإلغاء...',
+    'student.confirmUnbook': 'هل أنت متأكد من إلغاء حجزك في "{property}"؟',
+    'student.unbookError': 'فشل في إلغاء الحجز.',
 
     // لوحة المالك (Landlord Portal)
     'landlord.loadingMapPicker': 'جارٍ تحميل الخريطة التفاعلية...',
@@ -338,6 +342,10 @@ export const translations = {
     'student.status.APPROVED': 'APPROVED',
     'student.status.REJECTED': 'REJECTED',
     'student.status.PENDING': 'PENDING',
+    'student.unbookBtn': 'Unbook',
+    'student.unbookingBtn': 'Unbooking...',
+    'student.confirmUnbook': 'Are you sure you want to unbook "{property}"?',
+    'student.unbookError': 'Failed to cancel booking.',
 
     // Landlord Portal
     'landlord.loadingMapPicker': 'Loading interactive map picker...',

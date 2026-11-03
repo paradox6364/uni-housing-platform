@@ -138,3 +138,13 @@ export async function updateBookingStatus(bookingId, status) {
   if (!res.ok) throw new Error(data.error || 'Failed to update booking status');
   return data;
 }
+
+export async function cancelBooking(bookingId) {
+  const res = await fetch(`${API_BASE_URL}/bookings/${bookingId}`, {
+    method: 'DELETE',
+    headers: getAuthHeaders(),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Failed to cancel booking');
+  return data;
+}

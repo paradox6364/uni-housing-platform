@@ -100,3 +100,26 @@ exports.updateBookingStatus = async (req, res) => {
     res.status(500).json({ error: 'Failed to update booking status' });
   }
 };
+
+exports.deleteBooking = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const existing = await prisma.booking.findUnique({
+      where: { id },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    await prisma.booking.delete({
+      where: { id },
+    });
+
+    return res.json({ message: 'Booking cancelled successfully.', id });
+  } catch (error) {
+    console.error('DeleteBooking Error:', error);
+    return res.status(500).json({ error: 'Failed to cancel booking.' });
+  }
+};

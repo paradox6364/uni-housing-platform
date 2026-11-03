@@ -5,13 +5,14 @@ import Link from 'next/link';
 import Navbar from '../../components/Navbar';
 import { useAuth } from '../../context/AuthContext';
 import { useSettings } from '../../context/SettingsContext';
-import { fetchCurrentUser } from '../../services/api';
+import { fetchCurrentUser, cancelBooking } from '../../services/api';
 
 export default function StudentDashboardPage() {
   const { user, loading: authLoading } = useAuth();
   const { t } = useSettings();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState(null);
 
   useEffect(() => {
     if (!authLoading && user) {
@@ -23,6 +24,32 @@ export default function StudentDashboardPage() {
       setLoading(false);
     }
   }, [user, authLoading]);
+
+  const handleUnbook = async (booking) => {
+    const propertyTitle =
+      booking.roomType?.property?.title || t('student.propertyFallback');
+    const confirmed = window.confirm(
+      t('student.confirmUnbook', { property: propertyTitle })
+    );
+    if (!confirmed) return;
+
+    setCancellingId(booking.id);
+    try {
+      await cancelBooking(booking.id);
+      setProfile((prev) =>
+        prev
+          ? {
+              ...prev,
+              bookings: (prev.bookings || []).filter((b) => b.id !== booking.id),
+            }
+          : prev
+      );
+    } catch (err) {
+      alert(err.message || t('student.unbookError'));
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   if (authLoading || loading) {
     return (
@@ -112,7 +139,7 @@ export default function StudentDashboardPage() {
                     {t('student.monthsUnit')}
                   </p>
                 </div>
-                <div>
+                <div className="flex items-center gap-3">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-bold ${
                       b.status === 'APPROVED'
@@ -124,6 +151,16 @@ export default function StudentDashboardPage() {
                   >
                     {t(`student.status.${b.status}`)}
                   </span>
+                  <button
+                    type="button"
+                    onClick={() => handleUnbook(b)}
+                    disabled={cancellingId === b.id}
+                    className="px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 text-xs font-semibold transition disabled:opacity-50"
+                  >
+                    {cancellingId === b.id
+                      ? t('student.unbookingBtn')
+                      : t('student.unbookBtn')}
+                  </button>
                 </div>
               </div>
             ))}
