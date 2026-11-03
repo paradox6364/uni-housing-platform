@@ -1,5 +1,5 @@
 'use client';
-import { MapPin, DollarSign, Home, Compass } from 'lucide-react';
+import { MapPin, PoundSterling, Home, Compass } from 'lucide-react';
 import { useSettings } from '../context/SettingsContext';
 
 // ستايل مشترك لعناوين الحقول الصغيرة
@@ -63,7 +63,7 @@ export default function FilterBar({
         </div>
 
         <div className={fieldClass}>
-          <DollarSign className="w-4 h-4 text-slate-500 me-1.5 shrink-0" />
+          <PoundSterling className="w-4 h-4 text-slate-500 me-1.5 shrink-0" />
           <div className="flex flex-col">
             <span className={labelClass}>{t('filter.maxBudget')}</span>
             <select
@@ -72,7 +72,7 @@ export default function FilterBar({
               className="bg-transparent font-semibold text-sm text-slate-900 focus:outline-none cursor-pointer"
             >
               <option value="">{t('filter.anyPrice')}</option>
-              {[180, 250, 350, 500].map((price) => (
+              {[1000, 2500, 3000, 5000].map((price) => (
                 <option key={price} value={String(price)}>
                   {t('filter.upTo', { price })}
                 </option>
