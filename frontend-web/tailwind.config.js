@@ -28,7 +28,7 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Cairo', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'Tahoma', 'sans-serif']
+        sans: ['Inter', 'Alexandria', 'ui-sans-serif', 'system-ui', '-apple-system', 'Segoe UI', 'sans-serif']
       },
       colors: {
         brand,
