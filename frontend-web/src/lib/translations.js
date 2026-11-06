@@ -243,8 +243,12 @@ export const translations = {
     'landlord.amenity.Cleaning Service': 'خدمة تنظيف',
   },
 
-  en: {
-    'nav.explore': 'Explore Map',
+en: {
+    'nav.home': 'Home',
+    'nav.explore': 'Explore Housing',
+    'nav.universities': 'Universities',
+    'nav.roommates': 'Find a Roommate',
+    'nav.addProperty': 'Add Property',
     'nav.myBookings': 'My Bookings',
     'nav.landlordDashboard': 'Landlord Dashboard',
     'nav.login': 'Log In',
