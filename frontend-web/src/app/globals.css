@@ -42,11 +42,33 @@ html {
   transition: background-color 0.2s ease;
 }
 
-/* ارتفاع الشاشة كاملة (dvh يراعي شريط المتصفح على الموبايل) */
+html[lang="ar"] body {
+  font-family: 'Alexandria', 'Inter', sans-serif;
+  font-weight: 400;
+}
+
+html[lang="en"] body {
+  font-family: 'Inter', 'Alexandria', sans-serif;
+  font-weight: 400;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700 !important;
+}
+
+p {
+  font-weight: 400;
+}
+
+button, [type="button"], [type="submit"] {
+  font-weight: 600 !important;
+}
+
 .app-screen {
   height: 100vh;
   height: 100dvh;
 }
+
 body {
   transition: background-color 0.2s ease, color 0.2s ease;
 }
