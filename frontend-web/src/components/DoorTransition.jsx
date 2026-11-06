@@ -119,7 +119,7 @@ export default function DoorTransition({ children }) {
         <div
           style={{
             background:
-              'linear-gradient(135deg, #030611 0%, #0b1124 65%, #131c38 100%)',
+              'linear-gradient(135deg, #050b14 0%, #0f2138 65%, #142B4A 100%)',
             transform: isShut
               ? 'translate3d(0%, 0, 0)'
               : 'translate3d(-102%, 0, 0)',
@@ -132,15 +132,15 @@ export default function DoorTransition({ children }) {
           <div
             style={{
               background:
-                'radial-gradient(circle at 100% 50%, rgba(99, 102, 241, 0.25), transparent 65%)',
+                'radial-gradient(circle at 100% 50%, rgba(16, 185, 129, 0.2), transparent 65%)',
             }}
             className="absolute inset-0 pointer-events-none"
           />
           <div
             style={{
               background:
-                'linear-gradient(to bottom, transparent 10%, #818cf8 50%, transparent 90%)',
-              boxShadow: '0 0 25px #6366f1',
+                'linear-gradient(to bottom, transparent 10%, #10B981 50%, transparent 90%)',
+              boxShadow: '0 0 25px #10B981',
             }}
             className="w-[3px] h-full opacity-90"
           />
@@ -149,7 +149,7 @@ export default function DoorTransition({ children }) {
         <div
           style={{
             background:
-              'linear-gradient(225deg, #030611 0%, #0b1124 65%, #131c38 100%)',
+              'linear-gradient(225deg, #050b14 0%, #0f2138 65%, #142B4A 100%)',
             transform: isShut
               ? 'translate3d(0%, 0, 0)'
               : 'translate3d(102%, 0, 0)',
@@ -162,15 +162,15 @@ export default function DoorTransition({ children }) {
           <div
             style={{
               background:
-                'radial-gradient(circle at 0% 50%, rgba(99, 102, 241, 0.25), transparent 65%)',
+                'radial-gradient(circle at 0% 50%, rgba(16, 185, 129, 0.2), transparent 65%)',
             }}
             className="absolute inset-0 pointer-events-none"
           />
           <div
             style={{
               background:
-                'linear-gradient(to bottom, transparent 10%, #818cf8 50%, transparent 90%)',
-              boxShadow: '0 0 25px #6366f1',
+                'linear-gradient(to bottom, transparent 10%, #10B981 50%, transparent 90%)',
+              boxShadow: '0 0 25px #10B981',
             }}
             className="w-[3px] h-full opacity-90"
           />
@@ -190,21 +190,21 @@ export default function DoorTransition({ children }) {
             <div
               style={{
                 background:
-                  'radial-gradient(circle, rgba(99,102,241,0.55) 0%, transparent 70%)',
+                  'radial-gradient(circle, rgba(16,185,129,0.45) 0%, transparent 70%)',
               }}
               className="absolute -inset-12 rounded-full blur-2xl animate-pulse"
             />
 
             <div
               style={{
-                backgroundColor: '#090e1f',
-                borderColor: 'rgba(129, 140, 248, 0.5)',
+                backgroundColor: '#0a1626',
+                borderColor: 'rgba(16, 185, 129, 0.5)',
                 boxShadow:
-                  '0 0 50px rgba(79, 70, 229, 0.6), inset 0 0 20px rgba(99, 102, 241, 0.3)',
+                  '0 0 50px rgba(20, 43, 74, 0.8), inset 0 0 20px rgba(16, 185, 129, 0.25)',
               }}
               className="relative w-24 h-24 rounded-3xl border-2 flex items-center justify-center"
             >
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 via-brand-600 to-violet-700 text-white font-extrabold text-4xl flex items-center justify-center shadow-lg">
+              <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#142B4A] to-[#10B981] text-white font-extrabold text-4xl flex items-center justify-center shadow-lg">
                 U
               </div>
             </div>
