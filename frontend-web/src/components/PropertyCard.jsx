@@ -126,7 +126,7 @@ export default function PropertyCard({
               <button
                 type="button"
                 onClick={() => onBook(property)}
-                className="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow-sm"
+                className="bg-[#10B981] hover:bg-emerald-600 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition shadow-sm"
               >
                 {t('card.book')}
               </button>
