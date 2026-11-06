@@ -401,26 +401,25 @@ export default function HeroSlider({ listings: propListings }) {
             {/* Glowing Badge */}
             <div
               style={{
-                backgroundColor: 'rgba(99, 102, 241, 0.16)',
-                borderColor: 'rgba(129, 140, 248, 0.35)',
-                color: '#e0e7ff',
+                backgroundColor: 'rgba(16, 185, 129, 0.16)',
+                borderColor: 'rgba(16, 185, 129, 0.35)',
+                color: '#d1fae5',
               }}
               className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full border backdrop-blur-md text-xs sm:text-sm font-bold shadow-lg"
             >
               <span className="relative flex h-2.5 w-2.5">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-indigo-400" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#10B981] opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-[#10B981]" />
               </span>
               <span>{activeSlide.badge}</span>
             </div>
 
-            {/* Hero Title */}
             <h1
               style={{ color: '#ffffff' }}
-              className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold leading-[1.18] tracking-tight"
+              className="text-3xl sm:text-4xl lg:text-5xl font-extrabold leading-[1.45] sm:leading-[1.4] py-1"
             >
               {activeSlide.title}{' '}
-              <span className="block sm:inline text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 via-violet-300 to-cyan-300">
+              <span className="inline-block py-1 text-transparent bg-clip-text bg-gradient-to-r from-[#10B981] via-emerald-300 to-teal-200">
                 {activeSlide.highlight}
               </span>
             </h1>
@@ -438,7 +437,7 @@ export default function HeroSlider({ listings: propListings }) {
               <button
                 type="button"
                 onClick={scrollToExplorer}
-                className="group inline-flex items-center gap-3 bg-gradient-to-r from-brand-600 to-indigo-500 hover:from-brand-500 hover:to-indigo-500 text-white text-sm sm:text-base font-bold px-7 py-3.5 sm:py-4 rounded-2xl shadow-xl shadow-brand-600/30 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                className="group inline-flex items-center gap-3 bg-[#10B981] hover:bg-emerald-600 text-white text-sm sm:text-base font-bold px-7 py-3.5 sm:py-4 rounded-2xl shadow-xl shadow-emerald-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>{activeSlide.cta}</span>
                 <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-y-1" />
@@ -505,8 +504,8 @@ export default function HeroSlider({ listings: propListings }) {
                   <span>{activeSlide.card.tag}</span>
                 </div>
                 <div
-                  style={{ backgroundColor: 'rgba(79, 70, 229, 0.95)', color: '#ffffff' }}
-                  className="absolute bottom-3 end-3 px-3.5 py-1.5 rounded-xl shadow-lg"
+                  style={{ backgroundColor: '#142B4A', color: '#ffffff' }}
+                  className="absolute bottom-3 end-3 px-3.5 py-1.5 rounded-xl shadow-lg border border-white/15"
                 >
                   <span className="text-lg font-extrabold">{activeSlide.card.price}</span>
                   <span className="text-[11px] opacity-90"> {activeSlide.card.period}</span>
@@ -601,7 +600,7 @@ export default function HeroSlider({ listings: propListings }) {
                 >
                   <span
                     style={{
-                      backgroundColor: isActive ? '#6366f1' : 'rgba(255, 255, 255, 0.28)',
+                      backgroundColor: isActive ? '#10B981' : 'rgba(255, 255, 255, 0.28)',
                     }}
                     className={`h-2 rounded-full transition-all duration-500 ${
                       isActive ? 'w-12 sm:w-16' : 'w-3 group-hover:w-5'
