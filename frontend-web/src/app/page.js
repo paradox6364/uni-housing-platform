@@ -90,29 +90,29 @@ export default function HomePage() {
           />
         </div>
 
-        <main className="flex flex-col lg:flex-row h-[calc(100vh-7.5rem)] overflow-hidden">
+        <main className="flex flex-col lg:flex-row lg:h-[calc(100vh-8rem)] overflow-hidden">
           <div
             className={`${
               mobileView === 'map' ? 'hidden' : 'block'
-            } lg:block w-full lg:w-[55%] xl:w-[52%] h-full overflow-y-auto p-4 sm:p-6 pb-24 lg:pb-6 space-y-4 bg-slate-50`}
+            } lg:block w-full lg:w-[56%] xl:w-[54%] h-full overflow-y-auto p-5 sm:p-8 lg:p-10 pb-28 lg:pb-12 space-y-6 bg-slate-50`}
           >
-            <div>
-              <h1 className="text-xl font-extrabold text-slate-900">
+            <div className="space-y-1.5">
+              <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">
                 {t('home.title', { name: currentUni?.name || t('home.campusFallback') })}
               </h1>
-              <p className="text-xs text-slate-500">
+              <p className="text-sm text-slate-500">
                 {t('home.subtitle')}
               </p>
             </div>
 
             {loading ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {[1, 2].map((n) => (
-                  <div key={n} className="h-48 bg-white rounded-2xl border border-slate-200 animate-pulse p-5" />
+                  <div key={n} className="h-52 bg-white rounded-[16px] border border-slate-200 animate-pulse p-6 shadow-sm" />
                 ))}
               </div>
             ) : listings.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-12 text-center">
+              <div className="bg-white rounded-[16px] border border-slate-200 p-12 text-center shadow-sm">
                 <p className="font-bold text-slate-800 text-lg">{t('home.emptyTitle')}</p>
                 <p className="text-sm text-slate-500 mt-1">{t('home.emptyHint')}</p>
               </div>
