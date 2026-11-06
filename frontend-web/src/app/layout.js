@@ -1,6 +1,7 @@
 import './globals.css';
 import { AuthProvider } from '../context/AuthContext';
 import { SettingsProvider } from '../context/SettingsContext';
+import DoorTransition from '../components/DoorTransition';
 
 export const metadata = {
   title: 'UniHousing | منصة سكن الطلاب',
@@ -32,7 +33,9 @@ export default function RootLayout({ children }) {
       </head>
       <body className="bg-slate-50 text-slate-900 antialiased font-sans">
         <SettingsProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <DoorTransition>{children}</DoorTransition>
+          </AuthProvider>
         </SettingsProvider>
       </body>
     </html>
