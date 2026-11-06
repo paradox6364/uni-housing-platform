@@ -8,7 +8,7 @@ const labelClass =
   'text-[10px] uppercase tracking-wider rtl:tracking-normal rtl:text-[11px] font-bold text-slate-500';
 
 const fieldClass =
-  'flex items-center bg-slate-100 rounded-xl px-3 py-2 border border-slate-200 shrink-0';
+  'flex items-center bg-slate-100 rounded-[10px] px-4 h-[50px] border border-slate-200 shrink-0 transition duration-200 hover:border-slate-300 [&_select]:!min-h-0 [&_select]:!h-auto [&_select]:!p-0';
 
 export default function FilterBar({
   universities,
@@ -25,8 +25,8 @@ export default function FilterBar({
   const { t } = useSettings();
 
   return (
-    <div className="bg-white border-b border-slate-200 px-4 sm:px-6 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2 sm:gap-4 z-20 shadow-sm">
-      <div className="flex flex-nowrap sm:flex-wrap items-center gap-2 sm:gap-3 overflow-x-auto sm:overflow-visible w-full lg:w-auto pb-1 sm:pb-0">
+    <div className="bg-white border-b border-slate-200 px-4 sm:px-8 lg:px-10 py-3.5 sm:py-4 flex flex-wrap items-center justify-between gap-3 sm:gap-5 z-20 shadow-sm">
+      <div className="flex flex-nowrap sm:flex-wrap items-center gap-3 sm:gap-4 overflow-x-auto sm:overflow-visible w-full lg:w-auto pb-1 sm:pb-0">
         <div className={fieldClass}>
           <MapPin className="w-4 h-4 text-brand-600 me-2 shrink-0" />
           <div className="flex flex-col">
