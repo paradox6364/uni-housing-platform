@@ -32,9 +32,24 @@ module.exports = {
       },
       colors: {
         brand,
-        // أي مكان في الموقع مكتوب فيه blue ياخد لون الموقع الجديد تلقائيًا
         blue: brand,
         slate
+      },
+      borderRadius: {
+        lg: '10px',
+        xl: '10px',
+        '2xl': '16px',
+        '3xl': '16px',
+      },
+      boxShadow: {
+        sm: '0 2px 10px -2px rgba(23, 32, 51, 0.05)',
+        DEFAULT: '0 4px 16px -3px rgba(23, 32, 51, 0.06)',
+        md: '0 8px 24px -4px rgba(23, 32, 51, 0.08)',
+        lg: '0 12px 32px -6px rgba(23, 32, 51, 0.10)',
+        xl: '0 20px 40px -8px rgba(23, 32, 51, 0.12)',
+      },
+      transitionDuration: {
+        DEFAULT: '200ms',
       }
     }
   },
