@@ -206,7 +206,7 @@ export default function BookingModal({
               <button
                 type="submit"
                 disabled={submitting || rooms.length === 0}
-                className="px-5 py-2 rounded-lg text-sm font-semibold bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+                className="px-5 py-2 rounded-lg text-sm font-semibold bg-[#10B981] text-white hover:bg-emerald-600 disabled:bg-emerald-400"
               >
                 {submitting ? 'Sending...' : 'Confirm Booking Request'}
               </button>
