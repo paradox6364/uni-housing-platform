@@ -4,8 +4,12 @@
 
 export const translations = {
   ar: {
-    // شريط التنقل
-    'nav.explore': 'استكشف الخريطة',
+// شريط التنقل
+    'nav.home': 'الرئيسية',
+    'nav.explore': 'استكشف السكن',
+    'nav.universities': 'الجامعات',
+    'nav.roommates': 'ابحث عن شريك سكن',
+    'nav.addProperty': 'أضف عقارك',
     'nav.myBookings': 'حجوزاتي',
     'nav.landlordDashboard': 'لوحة المالك',
     'nav.login': 'تسجيل الدخول',
