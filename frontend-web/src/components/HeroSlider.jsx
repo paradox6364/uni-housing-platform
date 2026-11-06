@@ -437,10 +437,10 @@ export default function HeroSlider({ listings: propListings }) {
               <button
                 type="button"
                 onClick={scrollToExplorer}
-                className="group inline-flex items-center gap-3 bg-[#10B981] hover:bg-emerald-600 text-white text-sm sm:text-base font-bold px-7 py-3.5 sm:py-4 rounded-2xl shadow-xl shadow-emerald-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+                className="group inline-flex items-center gap-3 bg-[#10B981] hover:bg-emerald-600 text-white text-sm sm:text-base font-semibold px-7 py-3.5 rounded-[10px] shadow-lg shadow-emerald-500/25 transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
               >
                 <span>{activeSlide.cta}</span>
-                <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-300 group-hover:translate-y-1" />
+                <ArrowDown className="w-4 h-4 sm:w-5 sm:h-5 transition-transform duration-200 group-hover:translate-y-1" />
               </button>
 
               <Link
@@ -450,7 +450,7 @@ export default function HeroSlider({ listings: propListings }) {
                   borderColor: 'rgba(255, 255, 255, 0.2)',
                   color: '#ffffff',
                 }}
-                className="inline-flex items-center gap-2 px-6 py-3.5 sm:py-4 rounded-2xl border backdrop-blur-md hover:bg-white/15 text-sm sm:text-base font-semibold transition"
+                className="inline-flex items-center gap-2 px-6 py-3.5 rounded-[10px] border backdrop-blur-md hover:bg-white/15 text-sm sm:text-base font-semibold transition duration-200"
               >
                 <Building2 className="w-4 h-4 text-indigo-300" />
                 <span>{isRTL ? 'هل أنت مالك؟ اعرض عقارك' : 'Are you a Landlord? List Property'}</span>
@@ -484,10 +484,10 @@ export default function HeroSlider({ listings: propListings }) {
           <div className="hidden lg:block lg:col-span-5">
             <div
               style={{
-                backgroundColor: 'rgba(15, 23, 42, 0.68)',
+                backgroundColor: 'rgba(15, 23, 42, 0.65)',
                 borderColor: 'rgba(255, 255, 255, 0.16)',
               }}
-              className="relative rounded-3xl border backdrop-blur-xl p-5 shadow-2xl transition-all duration-500 hover:border-indigo-400/40"
+              className="relative rounded-[16px] border backdrop-blur-xl p-6 shadow-xl transition-all duration-200"
             >
               {/* Image Preview inside Floating Card */}
               <div className="relative h-48 rounded-2xl overflow-hidden mb-4">
