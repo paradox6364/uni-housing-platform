@@ -1,0 +1,109 @@
+name: Build Android APK (Web + Backend Connected)
+
+on:
+  workflow_dispatch:
+    inputs:
+      web_url:
+        description: 'اللينك'
+        required: false
+        default: ''
+  push:
+    branches:
+      - main
+
+jobs:
+  build-android-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Java JDK 21 for Android
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Frontend Dependencies & Capacitor
+        working-directory: ./frontend-web
+        run: |
+          npm install
+          npm install --no-save @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Prepare Web Assets for Mobile Shell
+        working-directory: ./frontend-web
+        env:
+          LIVE_WEB_URL: ${{ github.event.inputs.web_url }}
+        run: |
+          mkdir -p mobile-dist
+          cat << 'EOF' > mobile-dist/index.html
+          <!DOCTYPE html>
+          <html lang="ar" dir="rtl">
+          <head>
+            <meta charset="UTF-8" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <title>UniHousing</title>
+            <style>
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body, html { width: 100%; height: 100%; background: #050b14; font-family: sans-serif; overflow: hidden; }
+              .loader { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #050b14, #142B4A); color: #fff; z-index: 10; transition: opacity 0.4s ease; }
+              .logo { width: 76px; height: 76px; border-radius: 20px; background: linear-gradient(135deg, #142B4A, #10B981); display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 800; border: 2px solid rgba(16,185,129,0.5); box-shadow: 0 0 40px rgba(16,185,129,0.35); margin-bottom: 16px; }
+              .title { letter-spacing: 0.25em; font-size: 13px; font-weight: 700; color: #e2e8f0; }
+              iframe { width: 100%; height: 100%; border: 0; display: block; }
+            </style>
+          </head>
+          <body>
+            <div id="splash" class="loader">
+              <div class="logo">U</div>
+              <div class="title">UNIHOUSING</div>
+            </div>
+            <iframe id="app-frame" src="https://uni-housing-platform.vercel.app" onload="document.getElementById('splash').style.opacity='0'; setTimeout(()=>document.getElementById('splash').style.display='none', 400);"></iframe>
+          </body>
+          </html>
+          EOF
+          if [ -n "$LIVE_WEB_URL" ]; then
+            sed -i "s|https://uni-housing-platform.vercel.app|$LIVE_WEB_URL|g" mobile-dist/index.html
+          fi
+
+      - name: Initialize Capacitor & Generate Android Project
+        working-directory: ./frontend-web
+        run: |
+          cat << 'EOF' > capacitor.config.json
+          {
+            "appId": "com.unihousing.app",
+            "appName": "UniHousing",
+            "webDir": "mobile-dist",
+            "server": {
+              "androidScheme": "https",
+              "cleartext": true
+            }
+          }
+          EOF
+          npx cap add android
+          npx cap sync android
+
+      - name: Enable Internet Permission & Cleartext Traffic in AndroidManifest
+        working-directory: ./frontend-web/android/app/src/main
+        run: |
+          sed -i 's/<application/<application android:usesCleartextTraffic="true"/g' AndroidManifest.xml
+
+      - name: Build Debug APK with Gradle
+        working-directory: ./frontend-web/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload Ready-to-Install APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: UniHousing-Android-APK
+          path: frontend-web/android/app/build/outputs/apk/debug/app-debug.apk
