@@ -56,14 +56,34 @@ jobs:
               * { box-sizing: border-box; margin: 0; padding: 0; }
               body, html { width: 100%; height: 100%; height: 100dvh; background: #050b14; font-family: sans-serif; overflow: hidden; }
               .loader { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #050b14, #142B4A); color: #fff; z-index: 10; transition: opacity 0.4s ease; }
-              .logo { width: 76px; height: 76px; border-radius: 20px; background: linear-gradient(135deg, #142B4A, #10B981); display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 800; border: 2px solid rgba(16,185,129,0.5); box-shadow: 0 0 40px rgba(16,185,129,0.35); margin-bottom: 16px; }
+              .logo { width: 76px; height: 76px; border-radius: 20px; background: #0a1626; display: flex; align-items: center; justify-content: center; border: 2px solid rgba(16,185,129,0.5); box-shadow: 0 0 40px rgba(16,185,129,0.35); margin-bottom: 16px; }
               .title { letter-spacing: 0.25em; font-size: 13px; font-weight: 700; color: #e2e8f0; }
               iframe { width: 100%; height: 100%; height: 100dvh; border: 0; display: block; }
             </style>
           </head>
           <body>
             <div id="splash" class="loader">
-              <div class="logo">U</div>
+              <div class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" style="width: 56px; height: 56px; border-radius: 14px; display: block;">
+                  <defs>
+                    <linearGradient id="splashOxfordBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                      <stop offset="0%" stop-color="#334E68" />
+                      <stop offset="50%" stop-color="#142B4A" />
+                      <stop offset="100%" stop-color="#0A1626" />
+                    </linearGradient>
+                    <linearGradient id="splashSteelTint" x1="0%" y1="0%" x2="0%" y2="100%">
+                      <stop offset="0%" stop-color="#F0F4F8" />
+                      <stop offset="100%" stop-color="#BCCCDC" />
+                    </linearGradient>
+                  </defs>
+                  <rect width="512" height="512" rx="112" fill="url(#splashOxfordBg)" />
+                  <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="#9FB3C8" stroke-opacity="0.22" stroke-width="6" />
+                  <path d="M256 124 L388 190 L256 256 L124 190 Z" fill="#FFFFFF" />
+                  <path d="M358 205 V264" stroke="#9FB3C8" stroke-width="16" stroke-linecap="round" />
+                  <circle cx="358" cy="274" r="15" fill="#10B981" />
+                  <path d="M168 228 L256 272 L344 228 V346 A30 30 0 0 1 314 376 H284 V322 A28 28 0 0 0 228 322 V376 H198 A30 30 0 0 1 168 346 Z" fill="url(#splashSteelTint)" />
+                </svg>
+              </div>
               <div class="title">UNIHOUSING</div>
             </div>
             <iframe
@@ -92,6 +112,27 @@ jobs:
               "cleartext": true
             }
           }
+          EOF
+          cat << 'EOF' > src/app/icon.svg
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024">
+            <defs>
+              <linearGradient id="oxfordBrandBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#334E68" />
+                <stop offset="50%" stop-color="#142B4A" />
+                <stop offset="100%" stop-color="#0A1626" />
+              </linearGradient>
+              <linearGradient id="steelHouseTint" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stop-color="#F0F4F8" />
+                <stop offset="100%" stop-color="#BCCCDC" />
+              </linearGradient>
+            </defs>
+            <rect width="512" height="512" rx="112" fill="url(#oxfordBrandBg)" />
+            <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="#9FB3C8" stroke-opacity="0.2" stroke-width="4" />
+            <path d="M256 124 L388 190 L256 256 L124 190 Z" fill="#FFFFFF" />
+            <path d="M358 205 V264" stroke="#9FB3C8" stroke-width="14" stroke-linecap="round" />
+            <circle cx="358" cy="274" r="13" fill="#10B981" />
+            <path d="M168 228 L256 272 L344 228 V346 A30 30 0 0 1 314 376 H284 V322 A28 28 0 0 0 228 322 V376 H198 A30 30 0 0 1 168 346 Z" fill="url(#steelHouseTint)" />
+          </svg>
           EOF
           npx cap add android
           npx cap sync android
