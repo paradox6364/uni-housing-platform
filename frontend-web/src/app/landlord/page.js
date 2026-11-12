@@ -101,9 +101,9 @@ export default function LandlordPortal() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [address, setAddress] = useState('');
-  const [city, setCity] = useState('London');
-  const [latitude, setLatitude] = useState(51.5246);
-  const [longitude, setLongitude] = useState(-0.134);
+  const [city, setCity] = useState('Cairo');
+  const [latitude, setLatitude] = useState(30.0444);
+  const [longitude, setLongitude] = useState(31.2357);
   const [walkMins, setWalkMins] = useState('12');
   const [transitMins, setTransitMins] = useState('5');
   const [flyToTarget, setFlyToTarget] = useState(null);
