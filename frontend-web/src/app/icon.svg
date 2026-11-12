@@ -1,4 +1,32 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="128" fill="#142B4A"/>
-  <path d="M164 136h52v148c0 38 16 58 40 58s40-20 40-58V136h52v148c0 68-36 106-92 106s-92-38-92-106V136z" fill="#FFFFFF"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Oxford Navy Brand Gradient (brand-500 -> brand-600 -> brand-800) -->
+    <linearGradient id="oxfordBrandBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#334E68" />
+      <stop offset="50%" stop-color="#142B4A" />
+      <stop offset="100%" stop-color="#0A1626" />
+    </linearGradient>
+
+    <!-- Steel Blue Facade Gradient (brand-50 -> brand-200) -->
+    <linearGradient id="steelHouseTint" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#F0F4F8" />
+      <stop offset="100%" stop-color="#BCCCDC" />
+    </linearGradient>
+  </defs>
+
+  <!-- Adaptive Icon Background (Omit this rect when exporting foreground-only layer) -->
+  <rect width="512" height="512" rx="112" fill="url(#oxfordBrandBg)" />
+
+  <!-- Subtle Steel-Blue Inner Border (brand-300 at 20% opacity) -->
+  <rect x="16" y="16" width="480" height="480" rx="96" fill="none" stroke="#9FB3C8" stroke-opacity="0.2" stroke-width="4" />
+
+  <!-- Graduation Mortarboard Roof -->
+  <path d="M256 124 L388 190 L256 256 L124 190 Z" fill="#FFFFFF" />
+
+  <!-- Tassel Cord (brand-300) & Active Pin Emerald Drop -->
+  <path d="M358 205 V264" stroke="#9FB3C8" stroke-width="14" stroke-linecap="round" />
+  <circle cx="358" cy="274" r="13" fill="#10B981" />
+
+  <!-- House Body with Arched Doorway -->
+  <path d="M168 228 L256 272 L344 228 V346 A30 30 0 0 1 314 376 H284 V322 A28 28 0 0 0 228 322 V376 H198 A30 30 0 0 1 168 346 Z" fill="url(#steelHouseTint)" />
 </svg>

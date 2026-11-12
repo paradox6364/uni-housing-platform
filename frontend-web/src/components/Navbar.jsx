@@ -56,9 +56,48 @@ export default function Navbar() {
         {/* الشعار + الروابط (شاشة كبيرة) */}
         <div className="flex items-center gap-6">
           <Link href="/" onClick={closeMenu} className="flex items-center gap-2">
-            <span className="w-9 h-9 rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-white font-extrabold flex items-center justify-center shadow-sm">
-              U
-            </span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 512 512"
+              className="w-9 h-9 rounded-xl shadow-sm shrink-0"
+              aria-hidden="true"
+            >
+              <defs>
+                <linearGradient id="navOxfordBg" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#334E68" />
+                  <stop offset="50%" stopColor="#142B4A" />
+                  <stop offset="100%" stopColor="#0A1626" />
+                </linearGradient>
+                <linearGradient id="navSteelTint" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#F0F4F8" />
+                  <stop offset="100%" stopColor="#BCCCDC" />
+                </linearGradient>
+              </defs>
+              <rect width="512" height="512" rx="112" fill="url(#navOxfordBg)" />
+              <rect
+                x="16"
+                y="16"
+                width="480"
+                height="480"
+                rx="96"
+                fill="none"
+                stroke="#9FB3C8"
+                strokeOpacity="0.22"
+                strokeWidth="6"
+              />
+              <path d="M256 124 L388 190 L256 256 L124 190 Z" fill="#FFFFFF" />
+              <path
+                d="M358 205 V264"
+                stroke="#9FB3C8"
+                strokeWidth="16"
+                strokeLinecap="round"
+              />
+              <circle cx="358" cy="274" r="15" fill="#10B981" />
+              <path
+                d="M168 228 L256 272 L344 228 V346 A30 30 0 0 1 314 376 H284 V322 A28 28 0 0 0 228 322 V376 H198 A30 30 0 0 1 168 346 Z"
+                fill="url(#navSteelTint)"
+              />
+            </svg>
             <span className="text-xl font-extrabold text-slate-900">UniHousing</span>
           </Link>
 
