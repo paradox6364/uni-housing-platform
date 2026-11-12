@@ -50,15 +50,15 @@ jobs:
           <html lang="ar" dir="rtl">
           <head>
             <meta charset="UTF-8" />
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
             <title>UniHousing</title>
             <style>
               * { box-sizing: border-box; margin: 0; padding: 0; }
-              body, html { width: 100%; height: 100%; background: #050b14; font-family: sans-serif; overflow: hidden; }
+              body, html { width: 100%; height: 100%; height: 100dvh; background: #050b14; font-family: sans-serif; overflow: hidden; }
               .loader { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; background: linear-gradient(135deg, #050b14, #142B4A); color: #fff; z-index: 10; transition: opacity 0.4s ease; }
               .logo { width: 76px; height: 76px; border-radius: 20px; background: linear-gradient(135deg, #142B4A, #10B981); display: flex; align-items: center; justify-content: center; font-size: 36px; font-weight: 800; border: 2px solid rgba(16,185,129,0.5); box-shadow: 0 0 40px rgba(16,185,129,0.35); margin-bottom: 16px; }
               .title { letter-spacing: 0.25em; font-size: 13px; font-weight: 700; color: #e2e8f0; }
-              iframe { width: 100%; height: 100%; border: 0; display: block; }
+              iframe { width: 100%; height: 100%; height: 100dvh; border: 0; display: block; }
             </style>
           </head>
           <body>
@@ -66,7 +66,12 @@ jobs:
               <div class="logo">U</div>
               <div class="title">UNIHOUSING</div>
             </div>
-            <iframe id="app-frame" src="https://uni-housing-platform.vercel.app" onload="document.getElementById('splash').style.opacity='0'; setTimeout(()=>document.getElementById('splash').style.display='none', 400);"></iframe>
+            <iframe
+              id="app-frame"
+              src="https://uni-housing-platform.vercel.app"
+              allow="geolocation; fullscreen"
+              onload="var s=document.getElementById('splash'); s.style.pointerEvents='none'; s.style.opacity='0'; setTimeout(function(){s.style.display='none';}, 400);"
+            ></iframe>
           </body>
           </html>
           EOF

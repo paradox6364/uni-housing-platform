@@ -66,6 +66,40 @@ export default function HomePage() {
     loadListings();
   }, [selectedUniId, maxDistanceKm, maxPrice, category]);
 
+  // Recalculate Leaflet map size when toggled from hidden to visible on mobile
+  useEffect(() => {
+    if (mobileView === 'map') {
+      const timer = setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [mobileView]);
+
+  // Support Android APK hardware back button to close the map back to list view
+  useEffect(() => {
+    const handlePopState = () => {
+      setMobileView('list');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleToggleMobileView = () => {
+    if (mobileView === 'map') {
+      setMobileView('list');
+      if (typeof window !== 'undefined' && window.history.state?.mobileMapOpen) {
+        window.history.back();
+      }
+    } else {
+      setMobileView('map');
+      if (typeof window !== 'undefined') {
+        window.history.pushState({ mobileMapOpen: true }, '');
+        document.getElementById('explorer-section')?.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-50">
       <Navbar />
@@ -133,8 +167,8 @@ export default function HomePage() {
 
           <div
             className={`${
-              mobileView === 'map' ? 'block' : 'hidden'
-            } lg:block w-full lg:w-[45%] xl:w-[48%] h-full relative border-s border-slate-200`}
+              mobileView === 'map' ? 'block h-[calc(100vh-8rem)]' : 'hidden'
+            } lg:block w-full lg:w-[45%] xl:w-[48%] lg:h-full relative z-0 isolate border-s border-slate-200`}
           >
             <MapView
               university={currentUni}
@@ -149,8 +183,8 @@ export default function HomePage() {
       {/* زر التبديل بين القائمة والخريطة (موبايل وتابلت فقط) */}
       <button
         type="button"
-        onClick={() => setMobileView(mobileView === 'map' ? 'list' : 'map')}
-        className="lg:hidden fixed bottom-5 inset-x-0 mx-auto w-fit z-30 inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold px-5 py-3 rounded-full shadow-lg shadow-brand-900/30 transition"
+        onClick={handleToggleMobileView}
+        className="lg:hidden fixed bottom-5 inset-x-0 mx-auto w-fit z-[1000] inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-bold px-5 py-3 rounded-full shadow-lg shadow-brand-900/30 transition"
       >
         {mobileView === 'map' ? <ListIcon className="w-4 h-4" /> : <MapIcon className="w-4 h-4" />}
         {mobileView === 'map' ? t('home.showList') : t('home.showMap')}

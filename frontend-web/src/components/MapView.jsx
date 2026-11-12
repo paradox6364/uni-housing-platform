@@ -34,17 +34,37 @@ function MapUpdater({ lat, lng }) {
 }
 
 // يعيد حساب حجم الخريطة عندما يتغير حجمها (مثلًا عند إظهارها بعد أن كانت مخفية على الموبايل)
-function MapResizer() {
+function MapResizer({ lat, lng }) {
   const map = useMap();
   useEffect(() => {
-    if (typeof ResizeObserver === 'undefined') return;
     const el = map.getContainer();
-    const observer = new ResizeObserver(() => {
-      if (el.clientWidth > 0 && el.clientHeight > 0) map.invalidateSize();
-    });
+    let wasHidden = el.clientWidth === 0 || el.clientHeight === 0;
+
+    const handleResize = () => {
+      if (el.clientWidth > 0 && el.clientHeight > 0) {
+        map.invalidateSize({ animate: false });
+        if (wasHidden && lat && lng) {
+          wasHidden = false;
+          map.setView([lat, lng], map.getZoom() || 14, { animate: false });
+        }
+      } else {
+        wasHidden = true;
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+    if (typeof ResizeObserver === 'undefined') {
+      return () => window.removeEventListener('resize', handleResize);
+    }
+
+    const observer = new ResizeObserver(handleResize);
     observer.observe(el);
-    return () => observer.disconnect();
-  }, [map]);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', handleResize);
+    };
+  }, [map, lat, lng]);
   return null;
 }
 
@@ -80,7 +100,7 @@ export default function MapView({
     <MapContainer
       center={center}
       zoom={14}
-      className="w-full h-full z-0"
+      className="w-full h-full min-h-[400px] z-0"
       scrollWheelZoom={true}
     >
       <TileLayer
@@ -89,7 +109,7 @@ export default function MapView({
       />
 
       <MapUpdater lat={center[0]} lng={center[1]} />
-      <MapResizer />
+      <MapResizer lat={center[0]} lng={center[1]} />
 
       {/* University Campus Marker with Full University Name */}
       {university && (
