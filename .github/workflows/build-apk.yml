@@ -74,7 +74,7 @@ jobs:
             sed -i "s|https://uni-housing-platform.vercel.app|$LIVE_WEB_URL|g" mobile-dist/index.html
           fi
 
-      - name: Initialize Capacitor & Generate Android Project
+      - name: Initialize Capacitor & Generate Android Project with Header Icon
         working-directory: ./frontend-web
         run: |
           cat << 'EOF' > capacitor.config.json
@@ -90,6 +90,10 @@ jobs:
           EOF
           npx cap add android
           npx cap sync android
+          mkdir -p resources
+          cp src/app/icon.svg resources/icon.svg
+          cp src/app/icon.svg resources/splash.svg
+          npx --yes @capacitor/assets generate --android --iconBackgroundColor '#142B4A' --iconBackgroundColorDark '#142B4A' --splashBackgroundColor '#142B4A' --splashBackgroundColorDark '#142B4A'
 
       - name: Enable Internet Permission & Cleartext Traffic in AndroidManifest
         working-directory: ./frontend-web/android/app/src/main
