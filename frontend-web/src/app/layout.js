@@ -5,7 +5,20 @@ import DoorTransition from '../components/DoorTransition';
 
 export const metadata = {
   title: 'UniHousing | منصة سكن الطلاب',
-  description: 'ابحث عن سكن طلابي موثّق بالقرب من جامعتك — Find verified student housing near your campus',
+  description: 'ابحث عن سكن طلابي بالقرب من جامعتك — Find student housing near your campus',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'UniHousing',
+  },
+};
+
+export const viewport = {
+  themeColor: '#142B4A',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 // يشتغل قبل ظهور الصفحة ليطبّق اللغة والوضع المحفوظين فلا يحدث وميض في الشاشة
