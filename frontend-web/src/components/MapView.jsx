@@ -71,9 +71,9 @@ function MapResizer({ lat, lng }) {
 const createUniIcon = (uniName) =>
   L.divIcon({
     className: '',
-    html: `<div class="uni-pin">🎓 ${uniName || 'University'}</div>`,
-    iconSize: [180, 36],
-    iconAnchor: [90, 18],
+    html: `<div class="uni-pin" style="width: max-content; white-space: nowrap; transform: translateX(-50%);">🎓 ${uniName || 'University'}</div>`,
+    iconSize: [0, 36],
+    iconAnchor: [0, 18],
   });
 
 const createPriceIcon = (price, isHovered) =>
