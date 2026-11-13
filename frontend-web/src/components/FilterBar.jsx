@@ -29,12 +29,12 @@ export default function FilterBar({
       <div className="flex flex-nowrap sm:flex-wrap items-center gap-3 sm:gap-4 overflow-x-auto sm:overflow-visible w-full lg:w-auto pb-1 sm:pb-0">
         <div className={fieldClass}>
           <MapPin className="w-4 h-4 text-brand-600 me-2 shrink-0" />
-          <div className="flex flex-col">
+          <div className="flex flex-col min-w-0">
             <span className={labelClass}>{t('filter.university')}</span>
             <select
               value={selectedUniId}
               onChange={(e) => onSelectUni(e.target.value)}
-              className="bg-transparent font-semibold text-sm text-slate-900 focus:outline-none cursor-pointer pe-4"
+              className="w-48 truncate bg-transparent font-semibold text-sm text-slate-900 focus:outline-none cursor-pointer pe-4"
             >
               {universities.map((uni) => (
                 <option key={uni.id} value={uni.id}>
