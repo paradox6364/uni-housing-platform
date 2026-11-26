@@ -59,6 +59,20 @@ exports.createBooking = async (req, res) => {
       resolvedStudentId = student.id;
     }
 
+    const existingActiveBooking = await prisma.booking.findFirst({
+      where: {
+        studentId: resolvedStudentId,
+        roomTypeId,
+        status: { in: ['PENDING', 'APPROVED'] },
+      },
+    });
+
+    if (existingActiveBooking) {
+      return res.status(409).json({
+        error: 'You have already requested to book this room.',
+      });
+    }
+
     const booking = await prisma.booking.create({
       data: {
         studentId: resolvedStudentId,
@@ -209,3 +223,4 @@ exports.deleteBooking = async (req, res) => {
     return res.status(500).json({ error: 'Failed to cancel booking.' });
   }
 };
+
