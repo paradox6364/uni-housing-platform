@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { submitBookingRequest } from '../services/api';
+import { submitBookingRequest, fetchCurrentUser } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
 export default function BookingModal({
@@ -10,6 +10,7 @@ export default function BookingModal({
   isOpen = true,
   initialRoomId = '',
   initialDurationMonths = 9,
+  onBookingSuccess,
   onClose,
 }) {
   const { user, isLandlord } = useAuth();
@@ -25,6 +26,7 @@ export default function BookingModal({
   const [durationMonths, setDurationMonths] = useState(initialDurationMonths || 9);
   const [statusMsg, setStatusMsg] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [requestedRoomIds, setRequestedRoomIds] = useState([]);
 
   useEffect(() => {
     if (user) {
@@ -48,10 +50,41 @@ export default function BookingModal({
     }
   }, [initialDurationMonths]);
 
+  useEffect(() => {
+    if (!isOpen || !user || isLandlord) {
+      setRequestedRoomIds([]);
+      return;
+    }
+
+    let cancelled = false;
+    fetchCurrentUser()
+      .then((profile) => {
+        if (cancelled) return;
+        const activeIds = (profile?.bookings || [])
+          .filter((b) => b.status === 'PENDING' || b.status === 'APPROVED')
+          .map((b) => b.roomTypeId || b.roomType?.id)
+          .filter(Boolean);
+        setRequestedRoomIds(activeIds);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isOpen, user, isLandlord]);
+
   if (!isOpen || !property) return null;
+
+  const selectedRoomObj = rooms.find((rt) => rt.id === selectedRoomId);
+  const isAlreadyRequested = requestedRoomIds.includes(selectedRoomId);
+  const isRoomUnavailable = selectedRoomObj
+    ? selectedRoomObj.isAvailable === false
+    : false;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (isAlreadyRequested || isRoomUnavailable) return;
+
     setSubmitting(true);
     setStatusMsg(null);
 
@@ -64,6 +97,12 @@ export default function BookingModal({
         moveInDate,
         durationMonths: Number(durationMonths),
       });
+      setRequestedRoomIds((prev) =>
+        prev.includes(selectedRoomId) ? prev : [...prev, selectedRoomId]
+      );
+      if (onBookingSuccess) {
+        onBookingSuccess(selectedRoomId);
+      }
       setStatusMsg({
         type: 'success',
         text: 'Booking request submitted! Track it in My Bookings.',
@@ -115,13 +154,21 @@ export default function BookingModal({
               </label>
               <select
                 value={selectedRoomId}
-                onChange={(e) => setSelectedRoomId(e.target.value)}
+                onChange={(e) => {
+                  setSelectedRoomId(e.target.value);
+                  setStatusMsg(null);
+                }}
                 className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                 required
               >
                 {rooms.map((rt) => (
                   <option key={rt.id} value={rt.id}>
                     {rt.name} ({rt.category.replace('_', ' ')}) — ${rt.pricePerMonth}/mo
+                    {requestedRoomIds.includes(rt.id)
+                      ? ' (Already Requested)'
+                      : rt.isAvailable === false
+                      ? ' (Booked)'
+                      : ''}
                   </option>
                 ))}
               </select>
@@ -183,6 +230,12 @@ export default function BookingModal({
               </div>
             </div>
 
+            {isAlreadyRequested && statusMsg?.type !== 'success' && (
+              <div className="p-3 rounded-lg text-sm bg-amber-50 text-amber-800 border border-amber-200">
+                You have already submitted a request for this room. You can try again if it is rejected or cancelled.
+              </div>
+            )}
+
             {statusMsg && (
               <div
                 className={`p-3 rounded-lg text-sm ${
@@ -205,10 +258,21 @@ export default function BookingModal({
               </button>
               <button
                 type="submit"
-                disabled={submitting || rooms.length === 0}
+                disabled={
+                  submitting ||
+                  rooms.length === 0 ||
+                  isAlreadyRequested ||
+                  isRoomUnavailable
+                }
                 className="px-5 py-2 rounded-lg text-sm font-semibold bg-[#10B981] text-white hover:bg-emerald-600 disabled:bg-emerald-400"
               >
-                {submitting ? 'Sending...' : 'Confirm Booking Request'}
+                {submitting
+                  ? 'Sending...'
+                  : isAlreadyRequested
+                  ? 'Already Requested'
+                  : isRoomUnavailable
+                  ? 'Room Booked'
+                  : 'Confirm Booking Request'}
               </button>
             </div>
           </form>
