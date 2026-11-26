@@ -22,6 +22,18 @@ exports.createBooking = async (req, res) => {
       return res.status(403).json({ error: 'Landlord accounts cannot book rooms.' });
     }
 
+    const room = await prisma.roomType.findUnique({
+      where: { id: roomTypeId },
+    });
+
+    if (!room) {
+      return res.status(404).json({ error: 'Selected room not found.' });
+    }
+
+    if (!room.isAvailable) {
+      return res.status(409).json({ error: 'This room has already been booked.' });
+    }
+
     let resolvedStudentId = req.user?.id || studentId;
 
     if (!resolvedStudentId) {
@@ -91,12 +103,74 @@ exports.updateBookingStatus = async (req, res) => {
   try {
     const { id } = req.params;
     const { status } = req.body; // APPROVED or REJECTED
-    const updated = await prisma.booking.update({
+
+    const existing = await prisma.booking.findUnique({
       where: { id },
-      data: { status },
     });
+
+    if (!existing) {
+      return res.status(404).json({ error: 'Booking not found.' });
+    }
+
+    if (status === 'APPROVED') {
+      const updated = await prisma.$transaction(async (tx) => {
+        if (existing.status !== 'APPROVED') {
+          const locked = await tx.roomType.updateMany({
+            where: {
+              id: existing.roomTypeId,
+              isAvailable: true,
+            },
+            data: { isAvailable: false },
+          });
+
+          if (locked.count === 0) {
+            const err = new Error('This room has already been booked.');
+            err.statusCode = 409;
+            throw err;
+          }
+        }
+
+        const approvedBooking = await tx.booking.update({
+          where: { id },
+          data: { status: 'APPROVED' },
+        });
+
+        await tx.booking.updateMany({
+          where: {
+            roomTypeId: existing.roomTypeId,
+            id: { not: id },
+            status: 'PENDING',
+          },
+          data: { status: 'REJECTED' },
+        });
+
+        return approvedBooking;
+      });
+
+      return res.json(updated);
+    }
+
+    const updated = await prisma.$transaction(async (tx) => {
+      const updatedBooking = await tx.booking.update({
+        where: { id },
+        data: { status },
+      });
+
+      if (existing.status === 'APPROVED' && status === 'REJECTED') {
+        await tx.roomType.update({
+          where: { id: existing.roomTypeId },
+          data: { isAvailable: true },
+        });
+      }
+
+      return updatedBooking;
+    });
+
     res.json(updated);
   } catch (error) {
+    if (error.statusCode) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     res.status(500).json({ error: 'Failed to update booking status' });
   }
 };
@@ -113,9 +187,21 @@ exports.deleteBooking = async (req, res) => {
       return res.status(404).json({ error: 'Booking not found.' });
     }
 
-    await prisma.booking.delete({
-      where: { id },
-    });
+    if (existing.status === 'APPROVED') {
+      await prisma.$transaction([
+        prisma.booking.delete({
+          where: { id },
+        }),
+        prisma.roomType.update({
+          where: { id: existing.roomTypeId },
+          data: { isAvailable: true },
+        }),
+      ]);
+    } else {
+      await prisma.booking.delete({
+        where: { id },
+      });
+    }
 
     return res.json({ message: 'Booking cancelled successfully.', id });
   } catch (error) {
