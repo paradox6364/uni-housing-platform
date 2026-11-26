@@ -6,7 +6,8 @@ import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import Navbar from '../../../components/Navbar';
 import BookingModal from '../../../components/BookingModal';
-import { fetchPropertyById } from '../../../services/api';
+import { fetchPropertyById, fetchCurrentUser } from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 
 const MapView = dynamic(() => import('../../../components/MapView'), {
   ssr: false,
@@ -42,6 +43,7 @@ const CATEGORY_BADGE_STYLES = {
 export default function PropertyDetailsPage() {
   const params = useParams();
   const propertyId = params?.id;
+  const { user, isLandlord } = useAuth();
 
   const [property, setProperty] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -55,6 +57,7 @@ export default function PropertyDetailsPage() {
   const [selectedRoomId, setSelectedRoomId] = useState('');
   const [leaseMonths, setLeaseMonths] = useState(9);
   const [isBookingOpen, setIsBookingOpen] = useState(false);
+  const [requestedRoomIds, setRequestedRoomIds] = useState([]);
 
   useEffect(() => {
     if (!propertyId) return;
@@ -69,6 +72,29 @@ export default function PropertyDetailsPage() {
       .catch((err) => setError(err.message || 'Could not load property'))
       .finally(() => setLoading(false));
   }, [propertyId]);
+
+  useEffect(() => {
+    if (!user || isLandlord) {
+      setRequestedRoomIds([]);
+      return;
+    }
+
+    let cancelled = false;
+    fetchCurrentUser()
+      .then((profile) => {
+        if (cancelled) return;
+        const activeIds = (profile?.bookings || [])
+          .filter((b) => b.status === 'PENDING' || b.status === 'APPROVED')
+          .map((b) => b.roomTypeId || b.roomType?.id)
+          .filter(Boolean);
+        setRequestedRoomIds(activeIds);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user, isLandlord]);
 
   const galleryImages = useMemo(() => {
     if (!property) return FALLBACK_GALLERY;
@@ -98,6 +124,12 @@ export default function PropertyDetailsPage() {
   const securityDeposit = monthlyRent > 0 ? Math.round(monthlyRent * 0.5) : 0;
   const totalRentCost = monthlyRent * Number(leaseMonths);
   const grandTotalLeaseCost = totalRentCost + securityDeposit;
+  const isSelectedRoomRequested = selectedRoom
+    ? requestedRoomIds.includes(selectedRoom.id)
+    : false;
+  const isSelectedRoomUnavailable = selectedRoom
+    ? selectedRoom.isAvailable === false
+    : false;
 
   if (loading) {
     return (
@@ -316,6 +348,8 @@ export default function PropertyDetailsPage() {
                 <div className="space-y-3">
                   {filteredRooms.map((room) => {
                     const isSelected = selectedRoom?.id === room.id;
+                    const isRoomRequested = requestedRoomIds.includes(room.id);
+                    const isRoomBooked = room.isAvailable === false;
                     const badgeStyle =
                       CATEGORY_BADGE_STYLES[room.category] ||
                       'bg-slate-100 text-slate-700 border-slate-200';
@@ -364,14 +398,23 @@ export default function PropertyDetailsPage() {
 
                           <button
                             type="button"
+                            disabled={isRoomRequested || isRoomBooked}
                             onClick={(e) => {
                               e.stopPropagation();
                               setSelectedRoomId(room.id);
                               setIsBookingOpen(true);
                             }}
-                            className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition"
+                            className={`text-xs font-semibold px-4 py-2 rounded-lg transition ${
+                              isRoomRequested || isRoomBooked
+                                ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                                : 'bg-blue-600 hover:bg-blue-700 text-white'
+                            }`}
                           >
-                            Book Room
+                            {isRoomRequested
+                              ? 'Already Requested'
+                              : isRoomBooked
+                              ? 'Booked'
+                              : 'Book Room'}
                           </button>
                         </div>
                       </div>
@@ -534,10 +577,19 @@ export default function PropertyDetailsPage() {
 
                 <button
                   type="button"
+                  disabled={isSelectedRoomRequested || isSelectedRoomUnavailable}
                   onClick={() => setIsBookingOpen(true)}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm shadow-sm transition"
+                  className={`w-full font-bold py-3 rounded-xl text-sm shadow-sm transition ${
+                    isSelectedRoomRequested || isSelectedRoomUnavailable
+                      ? 'bg-slate-200 text-slate-500 cursor-not-allowed'
+                      : 'bg-blue-600 hover:bg-blue-700 text-white'
+                  }`}
                 >
-                  Book This Room ({leaseMonths} Months)
+                  {isSelectedRoomRequested
+                    ? 'Already Requested'
+                    : isSelectedRoomUnavailable
+                    ? 'Room Booked'
+                    : `Book This Room (${leaseMonths} Months)`}
                 </button>
 
                 {property.landlord && (
@@ -561,6 +613,11 @@ export default function PropertyDetailsPage() {
           isOpen={isBookingOpen}
           initialRoomId={selectedRoom?.id}
           initialDurationMonths={leaseMonths}
+          onBookingSuccess={(bookedRoomId) => {
+            setRequestedRoomIds((prev) =>
+              prev.includes(bookedRoomId) ? prev : [...prev, bookedRoomId]
+            );
+          }}
           onClose={() => setIsBookingOpen(false)}
         />
       )}
